@@ -2,12 +2,13 @@
 
 t-factory-server is a software aimed to manage Tomcat instances in a simple, standardized  and easy way via a Web Graphic User Interface that interact with agents (t-Factory-Agent) installed on remote servers.
 
-Tfactory usually fit well in scenarios when you hate to ask questions like:
+tFactory usually fit well in scenarios when you hate to ask questions like:
 * Which ports are available in a remote server?
 * Which ports does the current instances have configured on remote server?
 * Can you create a new instance in less than 1 minutes with custom settigns?
 * Can you give me a report of all the instances in our environment with his respective ports configuration now?
 * Can you create a image template and be distributed on remote servers in less than 2 minute?
+* What are we going to do if operations guy don't want to use Chef, Puppet or other cool tools for tomcat management?
 
 
 ## Table of contents
