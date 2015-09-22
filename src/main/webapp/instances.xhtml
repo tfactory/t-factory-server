@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (C) 2015 Cesar Hernandez. (https://github.com/tfactory)
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+
+<h:body>
+
+	<ui:composition template="./templates/masterTemplate.xhtml">
+
+		<!-- Page Tittle -->
+		<ui:define name="pageTitle">#{msg['RegistredInstances']}</ui:define>
+
+		<!-- Page Actual Content -->
+		<ui:define name="content">
+
+			<p:tabMenu activeIndex="1">
+				<p:menuitem value="#{msg.server}" outcome="servers.xhtml"/>
+				<p:menuitem value="#{msg.instance}" outcome="instances.xhtml"/>
+				<p:menuitem value="#{msg.configuration}" outcome="configuration.xhtml"/>
+			</p:tabMenu>
+
+
+			<p:toolbar>
+				<f:facet name="left">
+					<p:commandButton type="button" value="#{msg.register}"  icon="ui-icon-note" onclick="PF('dlg').show();" />
+					<p:commandButton type="button" value="#{msg.create}"    icon="ui-icon-document" onclick="PF('dlg_crear_instancia').show();" />
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<h:outputText value="#{msg.TomcatInstances}" />
+				</f:facet>
+			</p:toolbar>
+
+
+
+
+
+			<!-- MODAL USED FOR REGISTER A TOMCAT INSTANCE-->
+			<p:dialog header="#{msg.RegisterInstance}" widgetVar="dlg" modal="true"
+				resizable="false" closeOnEscape="true">
+				
+				<!-- Form used for register a remote tomcat instance-->
+				<h:form id="frmRegistrarInstancia">
+
+					<p:panelGrid>
+						<p:row>
+							<p:column style="font-weight: bold;">
+								<h:outputText value="#{msg.SelectTheServer}" />
+							</p:column>
+							<p:column colspan="5">
+
+								<p:selectOneMenu id="serv"
+									value="#{instanciasBean.nameSelectedServer}"
+									required="true">
+									<f:selectItem itemLabel="#{msg.SelectTheServer}" itemValue="" />
+									<f:selectItems value="#{instanciasBean.serversNameList}" />
+								</p:selectOneMenu>
+							</p:column>
+						</p:row>
+
+						<p:row>
+							<p:column style="font-weight: bold;">
+								<h:outputText value="#{msg.InstanceLocation}" />
+							</p:column>
+							<p:column colspan="2" style="font-weight: bold;">
+								<p:inputText value="#{instanciasBean.instancePath}" required="true"
+									style="width: 350px;" />
+							</p:column>
+
+							<p:column>
+								<p:commandButton value="#{msg.register}"
+									action="#{instanciasBean.btnRegistrarInstancia()}"
+									update="globo,@form,formTabla"
+									oncomplete="handleLoginRequest(xhr, status, args)" />
+							</p:column>
+						</p:row>
+					</p:panelGrid>
+				</h:form>
+			</p:dialog>
+
+
+
+
+
+			<!-- MODAL USED FOR CREATION OF A TOMCAT INSTANCE ON A REMOTE SERVER -->
+			<p:dialog header="#{msg.CreateNewInstance}"
+				widgetVar="dlg_crear_instancia" modal="true" resizable="false"
+				closeOnEscape="true">
+
+				<!-- Form used for the creation of a new instance-->
+				<h:form id="frmCrearNuevaInstancia">
+
+					<p:wizard flowListener="#{crearIntanciaWizard.onFlowProcess}">
+
+						<!-- STEP 1 datosGenerales -->
+						<p:tab id="datosGenerales" title="#{msg.GeneralData}">
+							<p:panel header="#{msg.DataAndLocation}">
+								<h:panelGrid columns="2" columnClasses="label, value">
+
+									<h:outputText value="#{msg.SelectTheServer}" />
+									<p:selectOneMenu id="servSlectSOM"
+										value="#{crearIntanciaWizard.nameSelectedServer}"
+										style="width:400px;" required="true">
+										<f:selectItem itemLabel="#{msg.SelectTheServer}" itemValue="" />
+										<f:selectItems value="#{instanciasBean.serversNameList}" />
+									</p:selectOneMenu>
+
+									<h:outputText value="#{msg.SelectPathInsideTheServer}" />
+									<p:selectOneMenu id="ubicStandInstSOM"
+										value="#{crearIntanciaWizard.ubicStandardTomcatSeleccionada}"
+										style="width:300px;" required="true">
+										<f:selectItem itemLabel="#{msg.SelectPathInsideTheServer}"
+											itemValue="" />
+										<f:selectItems
+											value="#{applicationBean.listaUbicEstandarDeInstancias}" />
+									</p:selectOneMenu>
+
+									<h:outputText
+										value="#{msg.SelectInstanceTemplate}" />
+									<p:selectOneMenu id="plantillaInstSOM"
+										value="#{crearIntanciaWizard.plantillaInstanciaSeleccionada}"
+										style="width:300px;" required="true">
+										<f:selectItem itemLabel="#{msg.SelectInstanceTemplate}"
+											itemValue="" />
+										<f:selectItems
+											value="#{applicationBean.listaPlantillasInstancias}" />
+									</p:selectOneMenu>
+
+									<h:outputText
+										value="#{msg.SelectJavaVersionForTheInstance}" />
+									<p:selectOneMenu id="versionJvaSOM"
+										value="#{crearIntanciaWizard.versionJavaSeleccionada}"
+										style="width:300px;" required="true">
+										<f:selectItem itemLabel="#{msg.SelectOneOption}" itemValue="" />
+										<f:selectItems
+											value="#{applicationBean.listaVersionJavaInstancias}" />
+									</p:selectOneMenu>
+
+									<h:outputText value="#{msg.NameOfNewInstance}" />
+									<p:inputText
+										value="#{crearIntanciaWizard.nombreInstanciaCrear}"
+										required="true" style="width: 295px;" maxlength="50"/>
+
+								</h:panelGrid>
+								<h:outputLabel value="#{crearIntanciaWizard.mjgDialog}"
+									style="color:red;" />
+								<br />
+							</p:panel>
+						</p:tab>
+
+
+						<!-- STEP 2 configuration -->
+						<p:tab id="configuracion" title="#{msg.Configurations}">
+							<p:panel header="#{msg.MemoryAndPortsConfiguration}">
+								<h:panelGrid columns="2" columnClasses="label, value">
+
+									<h:outputText value="#{msg.SelectHeapMemory}" />
+									<p:selectOneMenu id="heapMemSOM"
+										value="#{crearIntanciaWizard.cantidadHeapSeleccionada}"
+										style="width:200px;" required="true">
+										<f:selectItem itemLabel="512 MB (-Xms512m -Xmx512m)"
+											itemValue="512" />
+										<f:selectItems value="#{applicationBean.listaMemDeInstancias}" />
+									</p:selectOneMenu>
+
+									<h:outputText value="#{msg.SelectPermMemory}" />
+									<p:selectOneMenu id="permMemSOM"
+										value="#{crearIntanciaWizard.cantidadPermSeleccionada}"
+										style="width:200px;" required="true">
+										<f:selectItem itemLabel="512 MB (-Xms512m -Xmx512m)"
+											itemValue="512" />
+										<f:selectItems value="#{applicationBean.listaMemDeInstancias}" />
+									</p:selectOneMenu>
+								</h:panelGrid>
+
+
+
+								<br />
+								<span class="ui-icon ui-icon-alert"
+									style="display: inline-block" title="#{msg.warning}"></span>
+								<b>#{msg.warning}</b>
+								<h:outputLabel
+									value="#{msg.WarningTextAboutDetectedAvailablePorts}"
+									style="width:670px;  display:block;" />
+
+								<h:panelGrid columns="6" columnClasses="label, value">
+
+									<h:outputText value="HTTP" />
+									<p:inputText id="puertoHttpSOM"
+										value="#{crearIntanciaWizard.puertoHttp}" style="width:100px;"
+										required="true" />
+
+									<h:outputText value="AJP" />
+									<p:inputText id="puertoAjpSOM"
+										value="#{crearIntanciaWizard.puertoAjp}" style="width:100px;"
+										required="true" />
+
+									<h:outputText value="Shutdown" />
+									<p:inputText id="puertoShutdownSOM"
+										value="#{crearIntanciaWizard.puertoShutdown}"
+										style="width:100px;" required="true" />
+
+									<h:outputText value="Redirect" />
+									<p:inputText id="puertoRedirectSOM"
+										value="#{crearIntanciaWizard.puertoRedirect}"
+										style="width:100px;" required="true" />
+
+									<h:outputText value="JMX" />
+									<p:inputText id="puertoJmxSOM"
+										value="#{crearIntanciaWizard.puertoJmx}" style="width:100px;"
+										required="true" />
+
+								</h:panelGrid>
+							</p:panel>
+						</p:tab>
+
+
+						<!-- STEP 3 confirmation -->
+						<p:tab id="confirmacion" title="#{msg.Confirmation}">
+
+
+
+							<p:panel header="#{msg.InstanceDataConfirmation}">
+
+								<!-- <b>Datos Generales</b> -->
+								<h:panelGrid columns="2" columnClasses="label, value">
+									<h:outputText value="#{msg.server}: "
+										style="width:250px; display:block;" />
+									<h:outputText
+										value="#{crearIntanciaWizard.nameSelectedServer}"
+										style="font-weight: bold;" />
+
+									<h:outputText value="#{msg.InstancePathOnRemoteServer}:" />
+									<h:outputText
+										value="#{crearIntanciaWizard.ubicStandardTomcatSeleccionada}"
+										style="font-weight: bold;" />
+
+									<h:outputText value="#{msg.InstanceTemplate}:" />
+									<h:outputText
+										value="#{crearIntanciaWizard.plantillaInstanciaSeleccionada}"
+										style="font-weight: bold;" />
+
+									<h:outputText
+										value="#{msg.InstanceJavaVersion}:" />
+									<h:outputText
+										value="#{crearIntanciaWizard.versionJavaSeleccionada}"
+										style="font-weight: bold;" />
+
+									<h:outputText value="#{msg.InstanceName}:" />
+									<h:outputText
+										value="#{crearIntanciaWizard.nombreInstanciaCrear}"
+										style=" font-weight: bold;" />
+
+
+								</h:panelGrid>
+
+								<br />
+
+
+								<h:panelGrid columns="6" columnClasses="label, value">
+									<h:outputText value="Heap memory:"
+										style="width:130px; display:block;" />
+									<h:outputText
+										value="#{crearIntanciaWizard.cantidadHeapSeleccionada} m."
+										style="width:50px; display:block; font-weight: bold;" />
+
+									<h:outputText value="Perm memory:"
+										style="width:130px; display:block;" />
+									<h:outputText
+										value="#{crearIntanciaWizard.cantidadPermSeleccionada} m."
+										style="width:50px; display:block; font-weight: bold;" />
+
+									<h:outputText value="HTTP port:"
+										style="width:75px; display:block;" />
+									<h:outputText value="#{crearIntanciaWizard.puertoHttp}"
+										style="width:50px; display:block; font-weight: bold;" />
+
+									<h:outputText value="AJP port:"
+										style="width:75px; display:block;" />
+									<h:outputText value="#{crearIntanciaWizard.puertoAjp}"
+										style="width:50px; display:block; font-weight: bold;" />
+
+									<h:outputText value="Shutdown port:" />
+									<h:outputText value="#{crearIntanciaWizard.puertoShutdown}"
+										style="width:100px; font-weight: bold;" />
+
+									<h:outputText value="Redirect port:" />
+									<h:outputText value="#{crearIntanciaWizard.puertoRedirect}"
+										style="width:100px; font-weight: bold;" />
+
+									<h:outputText value="JMX port:" />
+									<h:outputText value="#{crearIntanciaWizard.puertoJmx}"
+										style="width:100px; font-weight: bold;" />
+								</h:panelGrid>
+
+								<br />
+								<dir style="text-align: right;">
+									<p:commandButton value="#{msg.CreateInstanceOnRemoteServer}"
+										action="#{crearIntanciaWizard.btnCrearInstanciaEnServerRemoto()}"
+										update="globo,@form,formTabla"
+										oncomplete="handleNuevaInstanciaRequest(xhr, status, args)"
+										style="font-weight: bold; height:25px;" icon="ui-icon-disk" />
+								</dir>
+							</p:panel>
+						</p:tab>
+					</p:wizard>
+
+				</h:form>
+			</p:dialog>
+
+
+			<br />
+
+
+			<!-- INTANCES TABLE -->
+			<h:form id="formTabla">
+				<div>
+					<p:poll interval="#{globalConf.WebPageContentRefreshInterval}" update="formTabla" widgetVar="primePoll"
+						autoStart="#{applicationBean.autoRefreshOff}" stop="#{!applicationBean.autoRefreshOff}" />
+					<table class="centrada">
+						<tbody>
+							<tr>
+								<td><p:dataTable var="servidorNodo"
+										value="#{applicationBean.listaServidores}"
+										tableStyle="width:auto">
+
+
+										<p:columnGroup type="header">
+											<p:row>
+												<p:column rowspan="2" headerText="#{msg.server}"
+													filterBy="#{servidorNodo.agentDto.hostname}"
+													filterMatchMode="contains" />
+												<p:column colspan="8" headerText="#{msg.instance}" />
+											</p:row>
+											<p:row>
+												<p:column headerText="#{msg.nameStr}" />
+												<p:column headerText="#{msg.agentStr}" />
+												<p:column headerText="HTTP" />
+												<p:column headerText="HTTP Redirect" />
+												<p:column headerText="AJP" />
+												<p:column headerText="AJP Redirect" />
+												<p:column headerText="Shutdown" />
+												<!-- <p:column headerText="Ubicacion" /> -->
+												<p:column headerText="#{msg.Actions}" />
+
+
+											</p:row>
+										</p:columnGroup>
+
+
+										<p:subTable var="instanciaNodo"
+											value="#{servidorNodo.listInstanceDto}">
+
+
+											<p:column>
+												<h:outputText value="#{servidorNodo.agentDto.hostname}" />
+											</p:column>
+
+											<p:column>
+												<h:graphicImage value="images/gatito.gif" height="15" />
+												<h:outputText value="#{instanciaNodo.name}" />
+											</p:column>
+
+											<p:column style="text-align:center">
+
+												<h:graphicImage value="images/green_circle.png"
+													rendered="#{instanciaNodo.status == 0}" />
+												<h:graphicImage value="images/red_circle.png"
+													rendered="#{instanciaNodo.status != 0}" />
+											</p:column>
+
+											<p:column>
+												<h:outputText value="#{instanciaNodo.serverXml.http}" />
+											</p:column>
+
+											<p:column>
+												<h:outputText
+													value="#{instanciaNodo.serverXml.httpRedirect}" />
+											</p:column>
+
+											<p:column>
+												<h:outputText value="#{instanciaNodo.serverXml.ajp}" />
+											</p:column>
+
+											<p:column>
+												<h:outputText value="#{instanciaNodo.serverXml.ajpRedirect}" />
+											</p:column>
+
+											<p:column>
+												<h:outputText value="#{instanciaNodo.serverXml.shutDown}" />
+											</p:column>
+
+											<!-- <p:column>
+						<h:outputText value="#{instanciaNodo.pathLocation}" />
+					</p:column>  -->
+
+											<p:column>
+
+												<!-- Instance Detail -->
+												<p:commandButton update="formTabla:servDetalle,globo"
+													oncomplete="PF('servidorDialog').show()"
+													icon="ui-icon-contact" title="#{msg.detailStr}">
+													<f:setPropertyActionListener value="#{instanciaNodo}"
+														target="#{instanciasBean.instanceSelectedDto}" />
+												</p:commandButton>
+
+												<!-- Synch Instance -->
+												<p:commandButton update="formTabla,globo"
+													icon="ui-icon-refresh" title="#{msg.Synch}"
+													action="#{instanciasBean.btnSincronizarInstancia()}">
+													<f:setPropertyActionListener value="#{servidorNodo}"
+														target="#{instanciasBean.serverSelectedDto}" />
+													<f:setPropertyActionListener value="#{instanciaNodo}"
+														target="#{instanciasBean.instanceSelectedDto}" />
+												</p:commandButton>
+
+												<!-- De register -->
+												<p:commandButton update="formTabla,globo"
+													icon="ui-icon-trash" title="#{msg.deleteRegister}"
+													action="#{instanciasBean.btnUnregisterInstance()}">
+													<f:setPropertyActionListener value="#{servidorNodo}"
+														target="#{instanciasBean.serverSelectedDto}" />
+													<f:setPropertyActionListener value="#{instanciaNodo}"
+														target="#{instanciasBean.instanceSelectedDto}" />
+													<p:confirm header="#{msg.DeleteConfirmation}"
+														message="#{msg.DoYouReallyWantToDeleteTheRegister}"
+														icon="ui-icon-alert" />
+												</p:commandButton>
+
+											</p:column>
+
+										</p:subTable>
+
+									</p:dataTable></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<!-- ***MODAL INFO INSTANCIA SELECCIONADO*** -->
+					<p:dialog header="#{msg.InstanceInformationHeader}" closeOnEscape="true"
+						widgetVar="servidorDialog" modal="true" showEffect="fade"
+						hideEffect="fade" resizable="false">
+						<p:outputPanel id="servDetalle" style="text-align:center;">
+							<p:panelGrid columns="2"
+								rendered="#{not empty instanciasBean.instanceSelectedDto}"
+								columnClasses="label,value">
+
+								<h:outputText value="Id:" />
+								<h:outputText
+									value="#{instanciasBean.instanceSelectedDto.pathLocation}" />
+
+								<h:outputText value="#{msg.nameStr}:" />
+								<h:outputText
+									value="#{instanciasBean.instanceSelectedDto.name}" />
+
+								<h:outputText value="#{msg.Status}:" />
+								<h:outputText
+									value="#{instanciasBean.instanceSelectedDto.status}" />
+							</p:panelGrid>
+						</p:outputPanel>
+					</p:dialog>
+
+
+
+
+				</div>
+			</h:form>
+
+
+<!-- 			<p:dock itemWidth="65">
+				<p:menuitem value="Inicio" icon="images/inicio.png"
+					url="servidores.xhtml" />
+				<p:menuitem value="Servidores" icon="images/servidores.png"
+					url="servers.xhtml" />
+				<p:menuitem value="Instancias" icon="images/Instancias.png"
+					url="instances.xhtml" />
+				<p:menuitem value="Configuración" icon="images/configuracion.png"
+					url="configuracion.xhtml" />
+
+			</p:dock> -->
+
+
+
+
+
+		</ui:define>
+
+
+
+
+	</ui:composition>
+
+</h:body>
+</html>
+

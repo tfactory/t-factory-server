@@ -1,0 +1,104 @@
+<!--
+
+    Copyright (C) 2015 Cesar Hernandez. (https://github.com/tfactory)
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:h="http://java.sun.com/jsf/html"
+ 	  xmlns:p="http://primefaces.org/ui">
+      
+<h:head>
+
+	<!-- Java Script used for hiding the modal Windows-->
+	
+	<script type="text/javascript">
+	    function handleLoginRequest(xhr, status, args) {
+	        if(args.validationFailed || !args.operacionExitosa) {
+	            PF('dlg').jq.effect("shake", {times:5}, 100);
+	            
+	        }
+	        else {
+	            PF('dlg').hide();
+	            
+	            $('#loginLink').fadeOut();
+	        }
+	    }
+	    function handleNuevaInstanciaRequest(xhr, status, args) {
+	        if(args.validationFailed || !args.operacionExitosa) {
+	            PF('dlg_crear_instancia').jq.effect("shake", {times:5}, 100);
+	        }
+	        else {
+	            PF('dlg_crear_instancia').hide();
+	            $('#loginLink').fadeOut();
+	        }
+	    }
+	    
+	    
+	</script>
+	
+	<link rel="stylesheet" href="css/estilo.css" type="text/css"/>
+	<link rel="icon" href="images/fabrik16.png" type="image/png" sizes="16x16"/>
+	<title><ui:insert name="pageTitle">Facelets Template</ui:insert></title>
+</h:head>
+
+
+<h:body>
+	<!-- Principal Top Banner and Logo -->
+	<div class="banner"> tFactory</div>
+	<div class="logo">
+		<img src="images/fabrik45.png" />
+	</div>
+
+
+	
+
+
+	<!-- INFORMATION GLOBE-->
+	<p:growl id="globo" life="6000"  severity="info,error,warning"/>
+	
+	<!-- MODAL STATUS AJAX -->
+	<p:dialog widgetVar="statusDialog" modal="true" draggable="false" closable="false" resizable="false" showHeader="false">
+			<h:outputText value="#{msg['processing']}" />
+    		<h:graphicImage value="/images/ajaxloadingbar.gif" />
+	</p:dialog>
+	<p:ajaxStatus onstart="PF('statusDialog').show()" onsuccess="PF('statusDialog').hide()" />
+	
+	
+	<!-- CONFIRMATION DIALOG -->
+	 <p:confirmDialog global="true" showEffect="fade" hideEffect="explode" closeOnEscape="true">
+        <p:commandButton value="#{msg['yes']}" type="button" styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+        <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+    </p:confirmDialog>
+
+
+	<!-- Main Contet -->
+	<div id="content">
+		<ui:insert name="content">Main Content</ui:insert>
+	</div>
+
+
+	<div class="footer"> 
+		<ui:insert name="pageFooter">#{facesContext.externalContext.requestLocale}</ui:insert>
+	</div>
+
+
+</h:body>
+
+
+
+</html>

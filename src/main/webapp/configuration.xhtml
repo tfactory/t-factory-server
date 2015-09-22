@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (C) 2015 Cesar Hernandez. (https://github.com/tfactory)
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+
+<h:body>
+
+	<ui:composition template="./templates/masterTemplate.xhtml">
+
+		<!-- Page Tittle -->
+		<ui:define name="pageTitle">#{msg['GlobalConfiguration']}</ui:define>
+
+		<!-- Page Actual Content -->
+		<ui:define name="content">
+
+			<p:tabMenu activeIndex="2" >
+				<p:menuitem value="#{msg.server}" outcome="servers.xhtml"/>
+				<p:menuitem value="#{msg.instance}" outcome="instances.xhtml"/>
+				<p:menuitem value="#{msg.configuration}" outcome="configuration.xhtml"/>
+			</p:tabMenu>			
+
+			<!-- Barra de menu -->
+			<p:toolbar>
+				<f:facet name="left">
+					
+					<h:outputText value="#{msg.GlobalConfiguration}" />
+				</f:facet>
+			</p:toolbar>
+
+
+			<br />
+
+
+			<table class="centrada">
+				<tbody>
+					<tr>
+						<td>
+							<h:form id="formConfig">
+
+
+								<p:panelGrid columns="2" columnClasses="label, value">
+									<h:outputText value="#{msg.AutoRefresh}" />
+									<p:inputSwitch value="#{applicationBean.autoRefreshOff}" />
+									<h:outputText value="#{msg.RefreshInterval}" />
+									<h:outputText value="#{globalConf.WebPageContentRefreshInterval}" />
+
+									<h:outputText value="#{msg.InitialPortRange}" />
+									<h:outputText value="#{applicationBean.puertosRangoInical}" />
+									<h:outputText value="#{msg.FinalPortRange}" />
+									<h:outputText value="#{applicationBean.puertosRangoFinal}" />
+
+									<h:outputText value="#{msg.ListOfJavaInstallations}" />
+									<h:dataTable
+										value="#{applicationBean.listaVersionJavaInstancias}"
+										var="listaJava">
+										<h:column>
+											<h:outputText value="#{listaJava.value}" />
+										</h:column>
+									</h:dataTable>
+
+									<h:outputText value="#{msg.ListOfInstancesRemoteHome}" />
+									<h:dataTable
+										value="#{applicationBean.listaUbicEstandarDeInstancias}"
+										var="listaInstancias">
+										<h:column>
+											<h:outputText value="#{listaInstancias.value}" />
+										</h:column>
+									</h:dataTable>
+
+									<h:panelGroup />
+									<h:panelGroup />
+									<h:outputText value="#{msg.ListOfInstancesTemplateLocations}" />
+									<h:dataTable
+										value="#{applicationBean.listaPlantillasInstancias}"
+										var="lista">
+										<h:column>
+											<h:outputText value="#{lista.value}" />
+										</h:column>
+									</h:dataTable>
+								</p:panelGrid>
+
+
+
+								<!--  <p:poll interval="3"  update="formConfig" widgetVar="primePoll" autoStart="#{applicationBean.autoRefreshOff}" stop="#{!applicationBean.autoRefreshOff}"/> -->
+								<!--    <p:poll interval="3"  update="formConfig" widgetVar="primePoll" autoStart="false" /> -->
+
+								<p:commandButton
+									action="#{applicationBean.applyConfigurationChanges()}"
+									icon="ui-icon-check" value="#{msg.ApplyChanges}" />
+
+							</h:form>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+
+<!-- 			<p:dock itemWidth="65">
+				<p:menuitem value="Inicio" icon="images/inicio.png"
+					url="servidores.xhtml" />
+				<p:menuitem value="Servidores" icon="images/servidores.png"
+					url="servers.xhtml" />
+				<p:menuitem value="Instancias" icon="images/Instancias.png"
+					url="instances.xhtml" />
+				<p:menuitem value="Configuración" icon="images/configuracion.png"
+					url="configuracion.xhtml" />
+
+			</p:dock> -->
+
+
+		</ui:define>
+	</ui:composition>
+
+
+</h:body>
+
+
+
+</html>

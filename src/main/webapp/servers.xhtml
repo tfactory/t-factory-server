@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (C) 2015 Cesar Hernandez. (https://github.com/tfactory)
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+
+<h:body>
+
+	<ui:composition template="./templates/masterTemplate.xhtml">
+
+		<!-- Page Tittle -->
+		<ui:define name="pageTitle">#{msg['RegisteredServers']}</ui:define>
+		
+		<!-- Page Actual Content -->
+		<ui:define name="content">
+
+			<p:tabMenu activeIndex="0" >
+				<p:menuitem value="#{msg.server}" outcome="servers.xhtml"/>
+				<p:menuitem value="#{msg.instance}" outcome="instances.xhtml"/>
+				<p:menuitem value="#{msg.configuration}" outcome="configuration.xhtml"/>
+			</p:tabMenu>
+
+
+			<!-- Servers menu bar -->
+			<p:toolbar>
+				<f:facet name="left">
+					<p:commandButton type="button" value="#{msg['new']}"
+						icon="ui-icon-document" onclick="PF('dlg').show();" />
+
+					<span class="ui-separator"> <span
+						class="ui-icon ui-icon-grip-dotted-vertical" />
+					</span>
+
+					<h:outputText value="#{msg.RegisteredServers}" />
+				</f:facet>
+			</p:toolbar>
+
+			<!-- MODAL PARA AGREGAR UN SERVIDOR -->
+			<p:dialog header="#{msg.AddServer}" widgetVar="dlg" modal="true"
+				resizable="false" closeOnEscape="true">
+				<!-- Form to add a new server -->
+				<h:form id="frmAgregarServidor">
+
+					<p:panelGrid>
+
+
+
+						<p:row>
+							<p:column style="font-weight: bold;">
+								<h:outputText value="#{msg.ServerLocation}" />
+							</p:column>
+							<p:column colspan="2" style="font-weight: bold;">
+								<p:inputText value="#{serversBean.agentPathOnServer}"
+									required="true" style="width: 402px;" />
+							</p:column>
+
+							<p:column>
+								<p:commandButton value="#{msg.Add}"
+									action="#{serversBean.btnAddServer()}"
+									update="globo,@form,formTabla"
+									oncomplete="handleLoginRequest(xhr, status, args)" />
+							</p:column>
+							<!-- <p:column>
+								<p:commandLink id="ajax"
+									action="#{serversBean.btnMostratPanelGridAvanzServer()}"
+									update="globo,@form">
+									<h:outputText value="#{msg.Advance}" />
+								</p:commandLink>
+
+
+							</p:column> -->
+						</p:row>
+
+						<p:panelGrid id="pgAvanzado"
+							rendered="true">
+							<p:row Style=" text-align:right">
+								<p:column colspan="2" styleClass="ui-widget-header">
+									<p:spacer height="0" width="149" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{msg.Port}" style="width: 50px;" />
+								</p:column>
+								<p:column>
+									<p:inputText value="#{serversBean.puertoServidorAgente}"
+										maxlength="5" style="width: 70px;" />
+								</p:column>
+								<p:column>
+									<h:outputText value="#{msg.Context}" />
+								</p:column>
+								<p:column>
+									<p:inputText value="#{serversBean.contextoServidorAgente}"
+										maxlength="50" style="width: 258px;" />
+								</p:column>
+
+
+							</p:row>
+						</p:panelGrid>
+					</p:panelGrid>
+				</h:form>
+			</p:dialog>
+
+
+
+
+			<br />
+
+
+
+
+
+
+			<!-- Servers Table -->
+			<h:form id="formTabla">
+
+				<!-- Auto Refresh setting for table  -->
+				<p:poll interval="#{globalConf.WebPageContentRefreshInterval}" update="formTabla" widgetVar="primePoll"
+					autoStart="#{applicationBean.autoRefreshOff}" stop="#{!applicationBean.autoRefreshOff}" />
+
+				<div style="text-align: center;">
+
+
+					<table class="centrada">
+						<tbody>
+							<tr>
+								<td><p:dataTable var="serverVar"
+										value="#{applicationBean.listaServidores}"
+										tableStyle="width:auto">
+
+
+
+										<p:column headerText="#{msg.Name}" style="text-align: left;" >
+											<!-- <h:graphicImage value="images/serversito.png" /> -->
+											<h:outputText value="#{serverVar.agentDto.hostname}"  />
+										</p:column>
+
+										<p:column headerText="#{msg.Status}">
+											<!-- <h:outputText value="#{serverVar.agentDto.status}" /> -->
+											<h:graphicImage value="images/green_circle.png"
+												rendered="#{serverVar.agentDto.status == 'ok'}" />
+											<h:graphicImage value="images/red_circle.png"
+												rendered="#{serverVar.agentDto.status != 'ok'}" />
+										</p:column>
+
+										<p:column headerText="#{msg.AgentVersion}">
+											<h:outputText value="#{serverVar.agentDto.versionAgent}" />
+										</p:column>
+
+
+
+										<p:column style="text-align: center"
+											headerText="#{msg.Actions}">
+
+											<!-- Server Detail -->
+											<p:commandButton update="formTabla:servDetalle,globo"
+												oncomplete="PF('servidorDialog').show()"
+												icon="ui-icon-contact" title="#{msg.Details}">
+												<f:setPropertyActionListener value="#{serverVar}"
+													target="#{serversBean.serverSeleccionadoDto}" />
+											</p:commandButton>
+
+											<!-- Synchonize -->
+											<p:commandButton update="formTabla,globo"
+												icon="ui-icon-refresh" title="#{msg.Synch}"
+												action="#{serversBean.btnSincronizarServidor()}">
+												<f:setPropertyActionListener value="#{serverVar}"
+													target="#{serversBean.serverSeleccionadoDto}" />
+											</p:commandButton>
+
+											<!-- Delete -->
+											<p:commandButton update="formTabla,globo"
+												icon="ui-icon-trash" title="#{msg.Delete}"
+												action="#{serversBean.btnEliminarServidor()}">
+												<f:setPropertyActionListener value="#{serverVar}"
+													target="#{serversBean.serverSeleccionadoDto}" />
+												<p:confirm header="#{msg.DeleteConfirmationHeader}"
+													message="#{msg.DeleteConfirmationMsg}" icon="ui-icon-alert" />
+											</p:commandButton>
+										</p:column>
+
+									</p:dataTable></td>
+							</tr>
+						</tbody>
+					</table>
+
+
+					<!-- ***MODAL INFO SELECTED SERVER *** -->
+					<p:dialog header="#{msg.Details}" closeOnEscape="true"
+						widgetVar="servidorDialog" modal="true" showEffect="fade"
+						hideEffect="fade" resizable="false">
+						<p:outputPanel id="servDetalle" style="text-align:center;">
+							<p:panelGrid columns="2"
+								rendered="#{not empty serversBean.serverSeleccionadoDto}"
+								columnClasses="label,value">
+
+								<h:outputText value="Id:" />
+								<h:outputText
+									value="#{serversBean.serverSeleccionadoDto.agentDto.path}" />
+
+								<h:outputText value="Hostname:" />
+								<h:outputText
+									value="#{serversBean.serverSeleccionadoDto.agentDto.hostname}" />
+
+								<h:outputText value="#{msg.Status}:" />
+								<h:outputText
+									value="#{serversBean.serverSeleccionadoDto.agentDto.status}" />
+
+								<h:outputText value="#{msg.AgentVersion}:" />
+								<h:outputText
+									value="#{serversBean.serverSeleccionadoDto.agentDto.versionAgent}" />
+							</p:panelGrid>
+						</p:outputPanel>
+					</p:dialog>
+
+
+
+				</div>
+			</h:form>
+
+			<!-- <p:dock itemWidth="65">
+				<p:menuitem value="Inicio" icon="images/inicio.png"
+					url="servidores.xhtml" />
+				<p:menuitem value="Servidores" icon="images/servidores.png"
+					url="servers.xhtml" />
+				<p:menuitem value="Instancias" icon="images/Instancias.png"
+					url="instances.xhtml" />
+				<p:menuitem value="Configuración" icon="images/configuracion.png"
+					url="configuracion.xhtml" />
+
+			</p:dock> -->
+			
+			
+		</ui:define>
+	</ui:composition>
+
+</h:body>
+</html>
+
