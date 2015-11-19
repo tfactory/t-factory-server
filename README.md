@@ -36,7 +36,7 @@ tFactory usually fit well in scenarios when you hate to ask questions like:
 * Paste the Tomcat intance(s) template(s) you want to distribute with the tFactory server
 * Restart the tomcat instance.
 
-For agente configuration see: [t-factory-agent] (https://github.com/tfactory/t-factory-agent/) 
+For agent configuration see: [t-factory-agent] (https://github.com/tfactory/t-factory-agent/) 
 
 
 ##Features
