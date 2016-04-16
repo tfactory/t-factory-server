@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence" version="2.1">
+
+    <persistence-unit name="tFactoryServerUnit" transaction-type="RESOURCE_LOCAL">
+        <description>Persistence Unit for tFactory server</description>
+        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+        <!-- Enables auto discovery of persistent classes, -->
+        <!-- otherwise they must be listed using <class>  -->
+        <exclude-unlisted-classes>false</exclude-unlisted-classes>
+        <!-- Connection configuration -->
+        <properties>
+            <property name="javax.persistence.jdbc.driver" value="org.sqlite.JDBC"/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:sqlite:tFactoryServerDB.sqlite"/>
+            <property name="javax.persistence.jdbc.user" value=""/>
+            <property name="javax.persistence.jdbc.password" value=""/>
+        </properties>
+    </persistence-unit>
+</persistence>
