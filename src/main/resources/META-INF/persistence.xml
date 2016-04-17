@@ -10,9 +10,9 @@
         <!-- Connection configuration -->
         <properties>
             <property name="javax.persistence.jdbc.driver" value="org.sqlite.JDBC"/>
-            <property name="javax.persistence.jdbc.url" value="jdbc:sqlite:tFactoryServerDB.sqlite"/>
-            <property name="javax.persistence.jdbc.user" value=""/>
-            <property name="javax.persistence.jdbc.password" value=""/>
+            <!-- property javax.persistence.jdbc.url is set dynamically in code so it points to a relative path />-->
+            <property name="eclipselink.ddl-generation.output-mode" value="database"/>
+            <property name="eclipselink.ddl-generation" value="create-or-extend-tables"/>
         </properties>
     </persistence-unit>
 </persistence>
