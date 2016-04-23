@@ -11,6 +11,10 @@ import javax.persistence.Id;
  */
 @Entity(name = "SERVER_AGENT")
 public class ServerAgent {
+
+    /**
+     * Path to the agent on a remote server
+     */
     @Id
     private String path;
 
@@ -28,7 +32,7 @@ public class ServerAgent {
      * @param dto Where the information comes from.
      * @return New instance of the entity class based on the param's data.
      */
-    public static ServerAgent of(AgentDto dto) {
+    public static ServerAgent from(AgentDto dto) {
         ServerAgent server = new ServerAgent();
         server.setPath(dto.getPath());
 
