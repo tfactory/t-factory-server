@@ -92,7 +92,7 @@ public class GenericService<T> {
     }
 
     /**
-     * Removes and entity from the database based on its primary key.
+     * Removes an entity from the database based on its primary key.
      *
      * @param id PK of the entity to be removed.
      */
