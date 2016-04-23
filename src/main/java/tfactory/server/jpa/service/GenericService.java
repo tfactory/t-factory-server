@@ -94,29 +94,10 @@ public class GenericService<T> {
     /**
      * Removes an entity from the database based on its primary key.
      *
-     * @param id PK of the entity to be removed.
+     * @param entity Entity to be removed.
      */
-    public void removeEntity(Object id) {
-        EntityManagerFactory factory = EMFProvider.getInstance().getEMF();
-        EntityManager em = null;
-        EntityTransaction trans = null;
-        try {
-            em = factory.createEntityManager();
-            trans = em.getTransaction();
-            trans.begin();
-            T entity = em.getReference(type, id);
-            em.remove(entity);
-            trans.commit();
-        } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, String.format("Error in find operation for entity %s", type), ex);
-            if (trans != null && trans.isActive()) {
-                trans.rollback();
-            }
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
+    public void removeEntity(T entity) {
+        doDML(entity, OPERATION.REMOVE);
     }
 
     /**
@@ -142,10 +123,10 @@ public class GenericService<T> {
                     em.merge(entity);
                     break;
                 case REMOVE:
-                    em.remove(entity);
+                    em.remove(em.getReference(type, getEntityPK(entity)));
                     break;
                 default:
-                    return;
+                    break;
             }
 
             trans.commit();
@@ -159,5 +140,15 @@ public class GenericService<T> {
                 em.close();
             }
         }
+    }
+
+    /**
+     * Gets the primary key for the specified entity.
+     *
+     * @param entity to be queried.
+     * @return PK of the specified entity.
+     */
+    public Object getEntityPK(T entity) {
+        return EMFProvider.getInstance().getEMF().getPersistenceUnitUtil().getIdentifier(entity);
     }
 }
