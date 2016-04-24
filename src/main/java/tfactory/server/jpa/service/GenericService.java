@@ -1,8 +1,14 @@
 package tfactory.server.jpa.service;
 
+import tfactory.server.jpa.exception.TFactoryExceptionCodeEnum;
+import tfactory.server.jpa.exception.TFactoryJPAException;
+import tfactory.server.jpa.util.JPAUtil;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import javax.persistence.PersistenceException;
+import java.sql.SQLException;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,7 +59,7 @@ public class GenericService<T> {
      *
      * @param entity Entity to be persisted.
      */
-    public void persistEntity(T entity) {
+    public void persistEntity(T entity) throws TFactoryJPAException {
         doDML(entity, OPERATION.PERSIST);
     }
 
@@ -62,8 +68,71 @@ public class GenericService<T> {
      *
      * @param entity Entity to be updated.
      */
-    public void updateEntity(T entity) {
+    public void updateEntity(T entity) throws TFactoryJPAException {
         doDML(entity, OPERATION.UPDATE);
+    }
+
+    /**
+     * Removes an entity from the database based on its primary key.
+     *
+     * @param entity Entity to be removed.
+     */
+    public void removeEntity(T entity) throws TFactoryJPAException {
+        doDML(entity, OPERATION.REMOVE);
+    }
+
+    /**
+     * Executes DML methods on the passed entity.
+     *
+     * @param entity Entity to work with.
+     * @param op     {@link OPERATION} to be executed.
+     */
+    private void doDML(T entity, OPERATION op) throws TFactoryJPAException {
+        EntityManagerFactory factory = EMFProvider.getInstance().getEMF();
+        EntityManager em = null;
+        EntityTransaction trans = null;
+        try {
+            em = factory.createEntityManager();
+            trans = em.getTransaction();
+            trans.begin();
+
+            switch (op) {
+                case PERSIST:
+                    em.persist(entity);
+                    break;
+                case UPDATE:
+                    em.merge(entity);
+                    break;
+                case REMOVE:
+                    em.remove(em.getReference(type, getEntityPK(entity)));
+                    break;
+                default:
+                    break;
+            }
+
+            trans.commit();
+        } catch (PersistenceException ex) {
+            LOGGER.log(Level.SEVERE, String.format("Error executing %s on entity %s", op, entity.getClass()), ex);
+
+            //get the last throwable of this exception and check if it is a SQLException
+            Throwable t = JPAUtil.getLastThrowable(ex);
+            if (t instanceof SQLException) {
+                SQLException sql = (SQLException) t;
+                //check whether the exception is about constraint violation
+                if ("23000".equals(sql.getSQLState()) || sql.getMessage().toUpperCase().contains("CONSTRAINT")) {
+                    LOGGER.log(Level.WARNING, "Constraint Violation");
+                    throw new TFactoryJPAException(TFactoryExceptionCodeEnum.CONSTRAINT_VIOLATION, sql);
+                }
+            }
+
+            if (trans != null && trans.isActive()) {
+                trans.rollback();
+            }
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
     }
 
     /**
@@ -89,57 +158,6 @@ public class GenericService<T> {
         }
 
         return result;
-    }
-
-    /**
-     * Removes an entity from the database based on its primary key.
-     *
-     * @param entity Entity to be removed.
-     */
-    public void removeEntity(T entity) {
-        doDML(entity, OPERATION.REMOVE);
-    }
-
-    /**
-     * Executes DML methods on the passed entity.
-     *
-     * @param entity Entity to work with.
-     * @param op     {@link OPERATION} to be executed.
-     */
-    private void doDML(T entity, OPERATION op) {
-        EntityManagerFactory factory = EMFProvider.getInstance().getEMF();
-        EntityManager em = null;
-        EntityTransaction trans = null;
-        try {
-            em = factory.createEntityManager();
-            trans = em.getTransaction();
-            trans.begin();
-
-            switch (op) {
-                case PERSIST:
-                    em.persist(entity);
-                    break;
-                case UPDATE:
-                    em.merge(entity);
-                    break;
-                case REMOVE:
-                    em.remove(em.getReference(type, getEntityPK(entity)));
-                    break;
-                default:
-                    break;
-            }
-
-            trans.commit();
-        } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, String.format("Error executing %s on entity %s", op, entity.getClass()), ex);
-            if (trans != null && trans.isActive()) {
-                trans.rollback();
-            }
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
     }
 
     /**
