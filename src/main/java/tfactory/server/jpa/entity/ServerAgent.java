@@ -4,12 +4,14 @@ import cesarhernandezgt.dto.AgentDto;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
  * ServerAgent Entity
  * Created by aalopez on 4/16/16.
  */
-@Entity(name = "SERVER_AGENT")
+@Entity(name = "ServerAgent") //this is required for JPQL
+@Table(name = "SERVER_AGENT") //this is required to map database tables
 public class ServerAgent {
 
     /**
