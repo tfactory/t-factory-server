@@ -9,6 +9,8 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.PersistenceException;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -168,5 +170,31 @@ public class GenericService<T> {
         }
 
         return result;
+    }
+
+    /**
+     * Gets all entities from database.
+     * For this to work, entities should be marked with @Entity annotation and the name of the entity must match the name of the class.
+     *
+     * @return {@link List} of all entities T registered in database.
+     */
+    @SuppressWarnings("unchecked")
+    public List<T> findAll() {
+        EntityManagerFactory factory = EMFProvider.getInstance().getEMF();
+        EntityManager em = null;
+
+        try {
+            em = factory.createEntityManager();
+
+            //return all entities using JQPL
+            return em.createQuery("SELECT t FROM " + type.getSimpleName() + " t").getResultList();
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, String.format("Error in find all operation for entity %s", type), ex);
+            return Collections.EMPTY_LIST;
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
     }
 }
