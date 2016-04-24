@@ -187,7 +187,8 @@ public class GenericService<T> {
             em = factory.createEntityManager();
 
             //return all entities using JQPL
-            return em.createQuery("SELECT t FROM " + type.getSimpleName() + " t").getResultList();
+            StringBuilder builder = new StringBuilder("SELECT t FROM ").append(type.getSimpleName()).append(" t");
+            return em.createQuery(builder.toString()).getResultList();
         } catch (Exception ex) {
             LOGGER.log(Level.SEVERE, String.format("Error in find all operation for entity %s", type), ex);
             return Collections.EMPTY_LIST;
