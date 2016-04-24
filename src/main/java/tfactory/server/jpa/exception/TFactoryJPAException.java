@@ -29,6 +29,7 @@ public class TFactoryJPAException extends Exception {
      */
     public TFactoryJPAException(TFactoryExceptionCodeEnum code, String message) {
         super(message);
+        this.exceptionCode = code;
     }
 
     /**
@@ -41,6 +42,7 @@ public class TFactoryJPAException extends Exception {
      */
     public TFactoryJPAException(TFactoryExceptionCodeEnum code, String message, Throwable cause) {
         super(message, cause);
+        this.exceptionCode = code;
     }
 
     /**
@@ -52,6 +54,7 @@ public class TFactoryJPAException extends Exception {
      */
     public TFactoryJPAException(TFactoryExceptionCodeEnum code, Throwable cause) {
         super(cause);
+        this.exceptionCode = code;
     }
 
     /**
@@ -69,6 +72,7 @@ public class TFactoryJPAException extends Exception {
      */
     protected TFactoryJPAException(TFactoryExceptionCodeEnum code, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
+        this.exceptionCode = code;
     }
 
     /**
