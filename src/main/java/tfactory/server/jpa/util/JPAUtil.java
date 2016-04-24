@@ -29,4 +29,16 @@ public final class JPAUtil {
      */
     public static final String PERSISTENCE_JDBC_STRING = "jdbc:sqlite:";
 
+    /**
+     * Gets the last throwable from the specified exception.
+     *
+     * @param e Exception to start from.
+     * @return The last throwable from the specified exception.
+     */
+    public static Throwable getLastThrowable(Exception e) {
+        Throwable t = null;
+        for (t = e.getCause(); t.getCause() != null; t = t.getCause()) ;
+        return t;
+    }
+
 }
