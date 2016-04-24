@@ -143,26 +143,26 @@
 						<tbody>
 							<tr>
 								<td><p:dataTable var="serverVar"
-										value="#{applicationBean.listaServidores}"
+										value="#{serversBean.serversList}"
 										tableStyle="width:auto">
 
 
 
 										<p:column headerText="#{msg.Name}" style="text-align: left;" >
 											<!-- <h:graphicImage value="images/serversito.png" /> -->
-											<h:outputText value="#{serverVar.agentDto.hostname}"  />
+											<h:outputText value="#{serverVar.hostname}"  />
 										</p:column>
 
 										<p:column headerText="#{msg.Status}">
-											<!-- <h:outputText value="#{serverVar.agentDto.status}" /> -->
+											
 											<h:graphicImage value="images/green_circle.png"
-												rendered="#{serverVar.agentDto.status == 'ok'}" />
+												rendered="#{serverVar.status == 'ok'}" />
 											<h:graphicImage value="images/red_circle.png"
-												rendered="#{serverVar.agentDto.status != 'ok'}" />
+												rendered="#{serverVar.status != 'ok'}" />
 										</p:column>
 
 										<p:column headerText="#{msg.AgentVersion}">
-											<h:outputText value="#{serverVar.agentDto.versionAgent}" />
+											<h:outputText value="#{serverVar.versionAgent}" />
 										</p:column>
 
 
@@ -214,19 +214,19 @@
 
 								<h:outputText value="Id:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.agentDto.path}" />
+									value="#{serversBean.serverSeleccionadoDto.path}" />
 
 								<h:outputText value="Hostname:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.agentDto.hostname}" />
+									value="#{serversBean.serverSeleccionadoDto.hostname}" />
 
 								<h:outputText value="#{msg.Status}:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.agentDto.status}" />
+									value="#{serversBean.serverSeleccionadoDto.status}" />
 
 								<h:outputText value="#{msg.AgentVersion}:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.agentDto.versionAgent}" />
+									value="#{serversBean.serverSeleccionadoDto.versionAgent}" />
 							</p:panelGrid>
 						</p:outputPanel>
 					</p:dialog>
