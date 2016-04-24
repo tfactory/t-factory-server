@@ -136,6 +136,16 @@ public class GenericService<T> {
     }
 
     /**
+     * Gets the primary key for the specified entity.
+     *
+     * @param entity to be queried.
+     * @return PK of the specified entity.
+     */
+    private Object getEntityPK(T entity) {
+        return EMFProvider.getInstance().getEMF().getPersistenceUnitUtil().getIdentifier(entity);
+    }
+
+    /**
      * Finds an entity based on its primary key.
      *
      * @param id PK
@@ -158,15 +168,5 @@ public class GenericService<T> {
         }
 
         return result;
-    }
-
-    /**
-     * Gets the primary key for the specified entity.
-     *
-     * @param entity to be queried.
-     * @return PK of the specified entity.
-     */
-    public Object getEntityPK(T entity) {
-        return EMFProvider.getInstance().getEMF().getPersistenceUnitUtil().getIdentifier(entity);
     }
 }
