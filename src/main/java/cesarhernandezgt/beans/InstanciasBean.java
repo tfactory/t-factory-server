@@ -15,9 +15,13 @@
  */
 package cesarhernandezgt.beans;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import cesarhernandezgt.clientRest.AgentRestClient;
+import cesarhernandezgt.dto.InstanceDto;
+import org.primefaces.context.RequestContext;
+import tfactory.server.jpa.entity.ServerAgent;
+import tfactory.server.jpa.entity.ServerInstance;
+import tfactory.server.jpa.exception.TFactoryJPAException;
+import tfactory.server.jpa.service.GenericService;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.application.FacesMessage.Severity;
@@ -26,12 +30,9 @@ import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.RequestScoped;
 import javax.faces.context.FacesContext;
 import javax.faces.model.SelectItem;
-
-import org.primefaces.context.RequestContext;
-
-import cesarhernandezgt.clientRest.AgentRestClient;
-import cesarhernandezgt.dto.InstanceDto;
-import cesarhernandezgt.dto.Server;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
 
 @ManagedBean
 @RequestScoped
@@ -42,8 +43,8 @@ public class InstanciasBean {
 	private List<SelectItem> serversNameList;
 	
 	//Used for the selection of one specific row of the Servers Table 
-	private Server serverSelectedDto;
-	private InstanceDto instanceSelectedDto;
+	private ServerAgent serverSelectedDto;
+	private ServerInstance instanceSelectedDto;
 	
 	
 	// Application Bean Injection
@@ -101,7 +102,9 @@ public class InstanciasBean {
 		
 		if (instanciaDtoRecibida != null){
 			System.out.println("Tomcat instance obtained "+instanciaDtoRecibida.getName() + " Status:"+instanciaDtoRecibida.getStatus());
-			
+
+			//create new ServerInstance entity from DTO
+			ServerInstance newInstance = ServerInstance.from(instanciaDtoRecibida);
 			
 			//We check the status of the instnaceDto object received.
 			int resultado = Integer.valueOf(instanciaDtoRecibida.getStatus()) ;
@@ -113,30 +116,39 @@ public class InstanciasBean {
 				System.out.println("   Server selected has the following path: "+nameSelectedServer);
 				
 				//The instances is in good shape, now we try to added It to the Master Array of ServerDto objects
-				for (Server nodoServidor : app.getListaServidores()) {
+				List<ServerAgent> serverAgentList = getServersList();
+				for (ServerAgent nodoServidor : serverAgentList) {
 					
 					//we see if the Server already exist
-					if(nodoServidor.getAgentDto().getPath().equalsIgnoreCase(nameSelectedServer)){
+					if(nodoServidor.getPath().equalsIgnoreCase(nameSelectedServer)){
 						
 						System.out.println("The server was found in the master Server list");
-						//if the instance list dosen't exist inside the server node, we create it.
-						if (nodoServidor.getListInstanceDto() == null){
-							System.out.println("The server don't hava a InstanciaDto list already, we procced to create It. HTTP:"+instanciaDtoRecibida.getServerXml().getHttp());
-							List<InstanceDto> listaInstanciaDtoNuevo = new ArrayList <InstanceDto>();
-							listaInstanciaDtoNuevo.add(instanciaDtoRecibida);
-							nodoServidor.setListInstanceDto(listaInstanciaDtoNuevo);
-							operacionExitosa = true;
-						}else{//If the Intance list already exist inside the server node, we proceed to register the new instance into the existing Instance List.
-							System.out.println("Because the Instance list already existe, we register the new IntanceDto");
-							
-							//check if the instances already exist.
-							if (!nodoServidor.getListInstanceDto().contains(instanciaDtoRecibida)) {
-								nodoServidor.getListInstanceDto().add(instanciaDtoRecibida);
+
+						//set server agent path on the server instance
+						newInstance.setServerAgent(nodoServidor.getPath());
+
+						//check if the instances already exist.
+						if (!nodoServidor.getInstances().contains(newInstance)) {
+
+							//adds the instance to the list of instances of the server.
+							nodoServidor.getInstances().add(newInstance);
+
+							try
+							{
+								//update database
+								GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
+								service.updateEntity(nodoServidor);
+
 								System.out.println("InstanceDto added successfully :) !!! HTTP:"+instanciaDtoRecibida.getServerXml().getHttp());
 								operacionExitosa = true;
-							} else {
-								System.out.println("The instanceDto was Not added because a instance with the name: "+instanciaDtoRecibida.getName()+" and path: "+instanciaDtoRecibida.getPathLocation()+" already exist. ");
 							}
+							catch(TFactoryJPAException ex)
+							{
+								agregarMensaje(String.format(msgProperties.getString("jpa-update-error"), ex.getExceptionCode()), FacesMessage.SEVERITY_ERROR);
+							}
+
+						} else {
+							System.out.println("The instanceDto was Not added because a instance with the name: "+instanciaDtoRecibida.getName()+" and path: "+instanciaDtoRecibida.getPathLocation()+" already exist. ");
 						}
 						break;
 					}//if
@@ -195,11 +207,11 @@ public class InstanciasBean {
 		System.out.println("\n Intance Shyncronization Pressed");
 		
 		if (serverSelectedDto!=null && instanceSelectedDto!=null) {
-			System.out.println("  Server selected:"+serverSelectedDto.getAgentDto().getHostname());
+			System.out.println("  Server selected:"+serverSelectedDto.getHostname());
 			System.out.println("    Selected instance is:"+instanceSelectedDto.getName());
 			
 			//We consume webservice Rest
-			InstanceDto instanciaDtoRecibida = agenteRestclientSvc.obtainInstanceDto(serverSelectedDto.getAgentDto().getPath(), instanceSelectedDto.getPathLocation());
+			InstanceDto instanciaDtoRecibida = agenteRestclientSvc.obtainInstanceDto(serverSelectedDto.getPath(), instanceSelectedDto.getPathLocation());
 			
 			if (instanciaDtoRecibida != null){
 				System.out.println("Obtained Tomcat instance: "+instanciaDtoRecibida.getName() + " Status:"+instanciaDtoRecibida.getStatus());
@@ -208,41 +220,17 @@ public class InstanciasBean {
 				//The instances is in good shape, now we try to added It to the Master Array of ServerDto objects
 				int resultado = Integer.valueOf(instanciaDtoRecibida.getStatus()) ;
 				
-				boolean operacionExitosa = false;
 				switch (resultado) {
 				case 0:
 					
 					System.out.println("Remote instance obtained successfully");
-					//Now that we got the Instnace, we update his info inside the Instance List for the specific Server Node.
-					for (Server nodoServidor : app.getListaServidores()) {
-						
-						if(nodoServidor.getAgentDto().getPath().equalsIgnoreCase(serverSelectedDto.getAgentDto().getPath())){
+					//syncs selected instance with received dto.
+					instanceSelectedDto.sync(instanciaDtoRecibida);
 
-							//verifying that the Instance exist and checking that his id match the synch one ****(pathLocation is used in the equals method).***
-								int indexInstancia = nodoServidor.getListInstanceDto().indexOf(instanceSelectedDto);
-								if (indexInstancia > -1) {
-									
-									nodoServidor.getListInstanceDto().set(indexInstancia, instanciaDtoRecibida);
-									System.out.println("InstanceDto  is in synch:) !!! HTTP:"+instanciaDtoRecibida.getServerXml().getHttp());
-									operacionExitosa  = true;
-								} else {
-									System.out.println("Instance not found in the Instance array of the selected server");
-									agregarMensaje(msgProperties.getString("InstanceNotFoundError"), FacesMessage.SEVERITY_ERROR );
-								}
-							//}
-							
-							break;
-						}//if
-					}//del for
-					
-					if (operacionExitosa){
-						
-						// return data to the view in order to allow JavaScrip to hide the modal panel.
-						agregarMensaje(msgProperties.getString("InstanceSynched"),FacesMessage.SEVERITY_INFO);
-					}else{
-						agregarMensaje(msgProperties.getString("InstanceNotFoundError"), FacesMessage.SEVERITY_ERROR );
-					}
+					System.out.println("InstanceDto  is in synch:) !!! HTTP:"+instanciaDtoRecibida.getServerXml().getHttp());
+					agregarMensaje(msgProperties.getString("InstanceSynched"),FacesMessage.SEVERITY_INFO);
 					break;
+
 				case 1:
 					agregarMensaje(msgProperties.getString("InstanceSynchedErrorType1"),FacesMessage.SEVERITY_ERROR);
 					agregarMensaje(msgProperties.getString("ToManyConectorsError"), FacesMessage.SEVERITY_WARN );
@@ -275,14 +263,21 @@ public class InstanciasBean {
 					instanceSelectedDto.setStatus("7"); //we change the status to indicate an  error (red Light)
 					break;
 				}
-				
-				
-				
 			}else{
 				agregarMensaje(msgProperties.getString("ServerConnectionError"), FacesMessage.SEVERITY_ERROR );
 				instanceSelectedDto.setStatus("-1");
 			}
-			
+
+			//once all modifications are done, update the server entity
+			try
+			{
+				GenericService<ServerInstance> service = GenericService.of(ServerInstance.class);
+				service.updateEntity(instanceSelectedDto);
+			}
+			catch(TFactoryJPAException ex)
+			{
+				agregarMensaje(String.format(msgProperties.getString("jpa-update-error"), ex.getExceptionCode()), FacesMessage.SEVERITY_ERROR);
+			}
 			
 		} else {
 			agregarMensaje(msgProperties.getString("InstanceNotFoundError"), FacesMessage.SEVERITY_ERROR );
@@ -296,21 +291,34 @@ public class InstanciasBean {
 	 * Unregister selected instance
 	 */
 	public void btnUnregisterInstance(){
-		System.out.println("\n For the server: "+serverSelectedDto.getAgentDto().getHostname());
+		System.out.println("\n For the server: "+serverSelectedDto.getHostname());
 		System.out.println("       We are going to delete the image: "+instanceSelectedDto.getPathLocation());
-		
-		if (serverSelectedDto.getListInstanceDto().remove(instanceSelectedDto)) {
+
+		try
+		{
+			//removes instance
+			GenericService<ServerInstance> service = GenericService.of(ServerInstance.class);
+			service.removeEntity(instanceSelectedDto);
+
+			//refreshes server entity since one of its child is gone now
+			GenericService<ServerAgent> serviceForServerAgent = GenericService.of(ServerAgent.class);
+			serviceForServerAgent.refreshEntity(serverSelectedDto);
+
 			agregarMensaje(msgProperties.getString("UnregisterInstanceSuccess"), FacesMessage.SEVERITY_INFO);
-		} else {
-			agregarMensaje(msgProperties.getString("UnregisterInstanceError")+ " <" +instanceSelectedDto.getName() + ">", FacesMessage.SEVERITY_ERROR);
 		}
-		
+		catch(TFactoryJPAException ex)
+		{
+			agregarMensaje(msgProperties.getString("UnregisterInstanceError")+ " <" +instanceSelectedDto.getName() + ">", FacesMessage.SEVERITY_ERROR);
+			agregarMensaje(String.format(msgProperties.getString("jpa-update-error"), ex.getExceptionCode()), FacesMessage.SEVERITY_ERROR);
+		}
 	}
 	
 	public void llenarListaServidoresNombre(){
-		serversNameList = new ArrayList<SelectItem>(); 
-		for (Server nodo : app.getListaServidores()) {
-			serversNameList.add(new SelectItem(nodo.getAgentDto().getPath(), nodo.getAgentDto().getHostname()));
+		serversNameList = new ArrayList<SelectItem>();
+		List<ServerAgent> registeredServers = getServersList();
+
+		for (ServerAgent nodo : registeredServers) {
+			serversNameList.add(new SelectItem(nodo.getPath(), nodo.getHostname()));
 		}
 	}
 	
@@ -370,12 +378,12 @@ public class InstanciasBean {
 	}
 
 
-	public Server getServerSelectedDto() {
+	public ServerAgent getServerSelectedDto() {
 		return serverSelectedDto;
 	}
 
 
-	public void setServerSelectedDto(Server serverSelectedDto) {
+	public void setServerSelectedDto(ServerAgent serverSelectedDto) {
 		this.serverSelectedDto = serverSelectedDto;
 	}
 
@@ -383,17 +391,26 @@ public class InstanciasBean {
 
 
 
-	public InstanceDto getInstanceSelectedDto() {
+	public ServerInstance getInstanceSelectedDto() {
 		return instanceSelectedDto;
 	}
 
 
-	public void setInstanceSelectedDto(InstanceDto instanceSelectedDto) {
+	public void setInstanceSelectedDto(ServerInstance instanceSelectedDto) {
 		this.instanceSelectedDto = instanceSelectedDto;
 	}
 
 
 
+	/**
+	 * Gets the list of registered servers.
+	 * @return List of {@link ServerAgent} from database.
+	 */
+	public List<ServerAgent> getServersList()
+	{
+		GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
 
+		return service.findAll();
+	}
 	
 }

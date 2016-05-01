@@ -344,14 +344,14 @@
 						<tbody>
 							<tr>
 								<td><p:dataTable var="servidorNodo"
-										value="#{applicationBean.listaServidores}"
+										value="#{instanciasBean.serversList}"
 										tableStyle="width:auto">
 
 
 										<p:columnGroup type="header">
 											<p:row>
 												<p:column rowspan="2" headerText="#{msg.server}"
-													filterBy="#{servidorNodo.agentDto.hostname}"
+													filterBy="#{servidorNodo.hostname}"
 													filterMatchMode="contains" />
 												<p:column colspan="8" headerText="#{msg.instance}" />
 											</p:row>
@@ -372,11 +372,11 @@
 
 
 										<p:subTable var="instanciaNodo"
-											value="#{servidorNodo.listInstanceDto}">
+											value="#{servidorNodo.instances}">
 
 
 											<p:column>
-												<h:outputText value="#{servidorNodo.agentDto.hostname}" />
+												<h:outputText value="#{servidorNodo.hostname}" />
 											</p:column>
 
 											<p:column>
@@ -393,24 +393,24 @@
 											</p:column>
 
 											<p:column>
-												<h:outputText value="#{instanciaNodo.serverXml.http}" />
+												<h:outputText value="#{instanciaNodo.http}" />
 											</p:column>
 
 											<p:column>
 												<h:outputText
-													value="#{instanciaNodo.serverXml.httpRedirect}" />
+													value="#{instanciaNodo.httpRedirect}" />
 											</p:column>
 
 											<p:column>
-												<h:outputText value="#{instanciaNodo.serverXml.ajp}" />
+												<h:outputText value="#{instanciaNodo.ajp}" />
 											</p:column>
 
 											<p:column>
-												<h:outputText value="#{instanciaNodo.serverXml.ajpRedirect}" />
+												<h:outputText value="#{instanciaNodo.ajpRedirect}" />
 											</p:column>
 
 											<p:column>
-												<h:outputText value="#{instanciaNodo.serverXml.shutDown}" />
+												<h:outputText value="#{instanciaNodo.shutDown}" />
 											</p:column>
 
 											<!-- <p:column>
