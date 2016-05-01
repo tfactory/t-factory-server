@@ -161,6 +161,39 @@ public class ServerInstance implements Serializable {
         this.ajp = ajp;
     }
 
+    @Override
+    public int hashCode() {
+        int code = 33;
+        code *= this.getServerAgent() != null ? this.getServerAgent().hashCode() : 1;
+        code *= this.getPathLocation() != null ? this.getPathLocation().hashCode() : 1;
+        return code;
+    }
+
+    /**
+     * Checks whether this is equal to another object.
+     * Result is based on {@link #getServerAgent()} and {@link #getPathLocation()}.
+     *
+     * @param obj Other object.
+     * @return {@code true} 1. If this and other object reference are the same. 2. If server agents and instance location are the same. {@code false} otherwise.
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        } else if (!(obj instanceof ServerInstance)) {
+            return false;
+        } else if (this.getServerAgent() == null || this.getPathLocation() == null) {
+            return false;
+        }
+
+        ServerInstance other = (ServerInstance) obj;
+        if (this.getServerAgent().equals(other.getServerAgent()) && this.getPathLocation().equals(other.getPathLocation())) {
+            return true;
+        }
+
+        return false;
+    }
+
 
     /**
      * Synchronizes this entity instance with the dto param.
