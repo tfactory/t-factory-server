@@ -17,9 +17,12 @@ package tfactory.server.jpa.entity;
 
 import cesarhernandezgt.dto.AgentDto;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.io.Serializable;
+import java.util.List;
+
+import static javax.persistence.CascadeType.ALL;
+import static javax.persistence.FetchType.EAGER;
 
 /**
  * ServerAgent Entity
@@ -27,16 +30,23 @@ import javax.persistence.Table;
  */
 @Entity(name = "ServerAgent") //this is required for JPQL
 @Table(name = "SERVER_AGENT") //this is required to map database tables
-public class ServerAgent {
-
+public class ServerAgent implements Serializable {
     @Id
+    @Column(name="SERVER_PATH")
     private String path;
 
+    @Column(name="HOSTNAME")
     private String hostname;
 
+    @Column(name="STATUS")
     private String status;
 
+    @Column(name="VERSION")
     private String versionAgent;
+
+    @OneToMany(cascade=ALL, fetch=EAGER)
+    @JoinColumn(name="SERVER_PATH", nullable = false)
+    private List<ServerInstance> instances;
 
     /**
      * Path to the agent on a remote server
@@ -80,6 +90,18 @@ public class ServerAgent {
 
     public void setVersionAgent(String version) {
         this.versionAgent = version;
+    }
+
+    /**
+     * Instances of this Server.
+     * @return List of registered instances for this server.
+     */
+    public List<ServerInstance> getInstances() {
+        return instances;
+    }
+
+    public void setInstances(List<ServerInstance> instances) {
+        this.instances = instances;
     }
 
     /**
