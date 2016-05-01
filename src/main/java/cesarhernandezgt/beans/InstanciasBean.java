@@ -43,8 +43,8 @@ public class InstanciasBean {
 	private List<SelectItem> serversNameList;
 	
 	//Used for the selection of one specific row of the Servers Table 
-	private ServerAgent serverSelectedDto;
-	private ServerInstance instanceSelectedDto;
+	private ServerAgent serverSelected;
+	private ServerInstance instanceSelected;
 	
 	
 	// Application Bean Injection
@@ -206,12 +206,12 @@ public class InstanciasBean {
 	public void btnSincronizarInstancia(){
 		System.out.println("\n Intance Shyncronization Pressed");
 		
-		if (serverSelectedDto!=null && instanceSelectedDto!=null) {
-			System.out.println("  Server selected:"+serverSelectedDto.getHostname());
-			System.out.println("    Selected instance is:"+instanceSelectedDto.getName());
+		if (serverSelected !=null && instanceSelected !=null) {
+			System.out.println("  Server selected:"+ serverSelected.getHostname());
+			System.out.println("    Selected instance is:"+ instanceSelected.getName());
 			
 			//We consume webservice Rest
-			InstanceDto instanciaDtoRecibida = agenteRestclientSvc.obtainInstanceDto(serverSelectedDto.getPath(), instanceSelectedDto.getPathLocation());
+			InstanceDto instanciaDtoRecibida = agenteRestclientSvc.obtainInstanceDto(serverSelected.getPath(), instanceSelected.getPathLocation());
 			
 			if (instanciaDtoRecibida != null){
 				System.out.println("Obtained Tomcat instance: "+instanciaDtoRecibida.getName() + " Status:"+instanciaDtoRecibida.getStatus());
@@ -225,7 +225,7 @@ public class InstanciasBean {
 					
 					System.out.println("Remote instance obtained successfully");
 					//syncs selected instance with received dto.
-					instanceSelectedDto.sync(instanciaDtoRecibida);
+					instanceSelected.sync(instanciaDtoRecibida);
 
 					System.out.println("InstanceDto  is in synch:) !!! HTTP:"+instanciaDtoRecibida.getServerXml().getHttp());
 					agregarMensaje(msgProperties.getString("InstanceSynched"),FacesMessage.SEVERITY_INFO);
@@ -235,44 +235,44 @@ public class InstanciasBean {
 					agregarMensaje(msgProperties.getString("InstanceSynchedErrorType1"),FacesMessage.SEVERITY_ERROR);
 					agregarMensaje(msgProperties.getString("ToManyConectorsError"), FacesMessage.SEVERITY_WARN );
 					System.out.println("The instance was not Synched (there is more than 1 Conectors apart from  HTTP and AJP on server.xml:"+ getInstancePath());
-					instanceSelectedDto.setStatus("1"); //we change the status to indicate an  error (red Light)
+					instanceSelected.setStatus("1"); //we change the status to indicate an  error (red Light)
 					break;
 					
 				case 2:
 					agregarMensaje(msgProperties.getString("ServerXmlReadingError"), FacesMessage.SEVERITY_ERROR );
-					instanceSelectedDto.setStatus("2"); //we change the status to indicate an  error (red Light)
+					instanceSelected.setStatus("2"); //we change the status to indicate an  error (red Light)
 					break;
 				case 3:
 					agregarMensaje(msgProperties.getString("ServerXmlReadingErrorType3"), FacesMessage.SEVERITY_ERROR );
-					instanceSelectedDto.setStatus("3"); //we change the status to indicate an  error (red Light)
+					instanceSelected.setStatus("3"); //we change the status to indicate an  error (red Light)
 					break;
 				case 4:
 					agregarMensaje(msgProperties.getString("InstancePathError"), FacesMessage.SEVERITY_ERROR );
-					instanceSelectedDto.setStatus("4"); //we change the status to indicate an  error (red Light)
+					instanceSelected.setStatus("4"); //we change the status to indicate an  error (red Light)
 					break;
 				case 5:
 					agregarMensaje(msgProperties.getString("IntanceConfNotFoundError"), FacesMessage.SEVERITY_ERROR );
-					instanceSelectedDto.setStatus("5"); //we change the status to indicate an  error (red Light)
+					instanceSelected.setStatus("5"); //we change the status to indicate an  error (red Light)
 					break;
 				case 6:
 					agregarMensaje(msgProperties.getString("ServerXmlNotFoundError"), FacesMessage.SEVERITY_ERROR );
-					instanceSelectedDto.setStatus("6"); //we change the status to indicate an  error (red Light)
+					instanceSelected.setStatus("6"); //we change the status to indicate an  error (red Light)
 					break;
 				case 7:
 					agregarMensaje(msgProperties.getString("InstacePathErrorType7"), FacesMessage.SEVERITY_ERROR );
-					instanceSelectedDto.setStatus("7"); //we change the status to indicate an  error (red Light)
+					instanceSelected.setStatus("7"); //we change the status to indicate an  error (red Light)
 					break;
 				}
 			}else{
 				agregarMensaje(msgProperties.getString("ServerConnectionError"), FacesMessage.SEVERITY_ERROR );
-				instanceSelectedDto.setStatus("-1");
+				instanceSelected.setStatus("-1");
 			}
 
 			//once all modifications are done, update the server entity
 			try
 			{
 				GenericService<ServerInstance> service = GenericService.of(ServerInstance.class);
-				service.updateEntity(instanceSelectedDto);
+				service.updateEntity(instanceSelected);
 			}
 			catch(TFactoryJPAException ex)
 			{
@@ -291,24 +291,24 @@ public class InstanciasBean {
 	 * Unregister selected instance
 	 */
 	public void btnUnregisterInstance(){
-		System.out.println("\n For the server: "+serverSelectedDto.getHostname());
-		System.out.println("       We are going to delete the image: "+instanceSelectedDto.getPathLocation());
+		System.out.println("\n For the server: "+ serverSelected.getHostname());
+		System.out.println("       We are going to delete the image: "+ instanceSelected.getPathLocation());
 
 		try
 		{
 			//removes instance
 			GenericService<ServerInstance> service = GenericService.of(ServerInstance.class);
-			service.removeEntity(instanceSelectedDto);
+			service.removeEntity(instanceSelected);
 
 			//refreshes server entity since one of its child is gone now
 			GenericService<ServerAgent> serviceForServerAgent = GenericService.of(ServerAgent.class);
-			serviceForServerAgent.refreshEntity(serverSelectedDto);
+			serviceForServerAgent.refreshEntity(serverSelected);
 
 			agregarMensaje(msgProperties.getString("UnregisterInstanceSuccess"), FacesMessage.SEVERITY_INFO);
 		}
 		catch(TFactoryJPAException ex)
 		{
-			agregarMensaje(msgProperties.getString("UnregisterInstanceError")+ " <" +instanceSelectedDto.getName() + ">", FacesMessage.SEVERITY_ERROR);
+			agregarMensaje(msgProperties.getString("UnregisterInstanceError")+ " <" + instanceSelected.getName() + ">", FacesMessage.SEVERITY_ERROR);
 			agregarMensaje(String.format(msgProperties.getString("jpa-update-error"), ex.getExceptionCode()), FacesMessage.SEVERITY_ERROR);
 		}
 	}
@@ -378,26 +378,26 @@ public class InstanciasBean {
 	}
 
 
-	public ServerAgent getServerSelectedDto() {
-		return serverSelectedDto;
+	public ServerAgent getServerSelected() {
+		return serverSelected;
 	}
 
 
-	public void setServerSelectedDto(ServerAgent serverSelectedDto) {
-		this.serverSelectedDto = serverSelectedDto;
+	public void setServerSelected(ServerAgent serverSelected) {
+		this.serverSelected = serverSelected;
 	}
 
 
 
 
 
-	public ServerInstance getInstanceSelectedDto() {
-		return instanceSelectedDto;
+	public ServerInstance getInstanceSelected() {
+		return instanceSelected;
 	}
 
 
-	public void setInstanceSelectedDto(ServerInstance instanceSelectedDto) {
-		this.instanceSelectedDto = instanceSelectedDto;
+	public void setInstanceSelected(ServerInstance instanceSelected) {
+		this.instanceSelected = instanceSelected;
 	}
 
 
