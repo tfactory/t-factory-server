@@ -103,9 +103,6 @@ public class InstanciasBean {
 		if (instanciaDtoRecibida != null){
 			System.out.println("Tomcat instance obtained "+instanciaDtoRecibida.getName() + " Status:"+instanciaDtoRecibida.getStatus());
 
-			//create new ServerInstance entity from DTO
-			ServerInstance newInstance = ServerInstance.from(instanciaDtoRecibida);
-			
 			//We check the status of the instnaceDto object received.
 			int resultado = Integer.valueOf(instanciaDtoRecibida.getStatus()) ;
 			
@@ -114,7 +111,10 @@ public class InstanciasBean {
 				
 				System.out.println("We start to register the instance path :"+ getInstancePath());
 				System.out.println("   Server selected has the following path: "+nameSelectedServer);
-				
+
+				//create new ServerInstance entity from DTO
+				ServerInstance newInstance = ServerInstance.from(instanciaDtoRecibida);
+
 				//The instances is in good shape, now we try to added It to the Master Array of ServerDto objects
 				List<ServerAgent> serverAgentList = getServersList();
 				for (ServerAgent nodoServidor : serverAgentList) {
