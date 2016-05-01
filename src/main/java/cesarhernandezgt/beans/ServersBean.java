@@ -53,14 +53,14 @@ public class ServersBean {
 	private ResourceBundle msgProperties;
 	
 	//Attribute used to store the details of a remote Server
-	private ServerAgent serverSeleccionadoDto;
+	private ServerAgent serverSeleccionado;
 	
-	public ServerAgent getServerSeleccionadoDto() {
-		return serverSeleccionadoDto;
+	public ServerAgent getServerSeleccionado() {
+		return serverSeleccionado;
 	}
 
-	public void setServerSeleccionadoDto(ServerAgent serverSeleccionadoDto) {
-		this.serverSeleccionadoDto = serverSeleccionadoDto;
+	public void setServerSeleccionado(ServerAgent serverSeleccionado) {
+		this.serverSeleccionado = serverSeleccionado;
 	}
 
 	//Injection AgenteRestClient Bean
@@ -185,19 +185,19 @@ public class ServersBean {
 	 * Method that makes a synchronization with the remote server that contains the agent.
 	 */
 	public void btnSincronizarServidor (){
-		System.out.println("Server to be synchoronized: "+serverSeleccionadoDto.getPath());
+		System.out.println("Server to be synchoronized: "+ serverSeleccionado.getPath());
 		
 		//We consume the Agent Rest Web Servcice 
-		AgentDto objAgenteDtoAux = agenteRestclientSvc.obtainAgenteSrv(serverSeleccionadoDto.getPath());
+		AgentDto objAgenteDtoAux = agenteRestclientSvc.obtainAgenteSrv(serverSeleccionado.getPath());
 		
 		if(objAgenteDtoAux.getStatus().equalsIgnoreCase("ok")){
 			//Server data is updated
-			serverSeleccionadoDto.setStatus(objAgenteDtoAux.getStatus());
-			serverSeleccionadoDto.setHostname(objAgenteDtoAux.getHostname());
-			serverSeleccionadoDto.setVersionAgent(objAgenteDtoAux.getVersionAgent());
-			agregarMensaje(msgProperties.getString("SynchSuccessfull")+": "+ serverSeleccionadoDto.getHostname(), FacesMessage.SEVERITY_INFO);
+			serverSeleccionado.setStatus(objAgenteDtoAux.getStatus());
+			serverSeleccionado.setHostname(objAgenteDtoAux.getHostname());
+			serverSeleccionado.setVersionAgent(objAgenteDtoAux.getVersionAgent());
+			agregarMensaje(msgProperties.getString("SynchSuccessfull")+": "+ serverSeleccionado.getHostname(), FacesMessage.SEVERITY_INFO);
 		}else {
-			serverSeleccionadoDto.setStatus("offline");
+			serverSeleccionado.setStatus("offline");
 			agregarMensaje(msgProperties.getString("SynchError")+" <" +objAgenteDtoAux.getStatus() + ">", FacesMessage.SEVERITY_ERROR);
 		}
 
@@ -205,7 +205,7 @@ public class ServersBean {
 		try
 		{
 			GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
-			service.updateEntity(serverSeleccionadoDto);
+			service.updateEntity(serverSeleccionado);
 		}
 		catch(TFactoryJPAException ex)
 		{
@@ -218,18 +218,18 @@ public class ServersBean {
 	 * Delete (deregistred) a server.
 	 */
 	public void btnEliminarServidor (){
-		System.out.println("Deleting server: "+serverSeleccionadoDto.getPath());
+		System.out.println("Deleting server: "+ serverSeleccionado.getPath());
 
 		try
 		{
 			GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
-			service.removeEntity(serverSeleccionadoDto);
+			service.removeEntity(serverSeleccionado);
 
 			agregarMensaje(msgProperties.getString("ServerDeletedSucc")+".", FacesMessage.SEVERITY_INFO);
 		}
 		catch(TFactoryJPAException ex)
 		{
-			agregarMensaje(msgProperties.getString("ServerDeletedError")+" <" +serverSeleccionadoDto.getHostname() + ">", FacesMessage.SEVERITY_ERROR);
+			agregarMensaje(msgProperties.getString("ServerDeletedError")+" <" + serverSeleccionado.getHostname() + ">", FacesMessage.SEVERITY_ERROR);
 		}
 	}
 

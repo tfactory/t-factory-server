@@ -175,7 +175,7 @@
 												oncomplete="PF('servidorDialog').show()"
 												icon="ui-icon-contact" title="#{msg.Details}">
 												<f:setPropertyActionListener value="#{serverVar}"
-													target="#{serversBean.serverSeleccionadoDto}" />
+													target="#{serversBean.serverSeleccionado}" />
 											</p:commandButton>
 
 											<!-- Synchonize -->
@@ -183,7 +183,7 @@
 												icon="ui-icon-refresh" title="#{msg.Synch}"
 												action="#{serversBean.btnSincronizarServidor()}">
 												<f:setPropertyActionListener value="#{serverVar}"
-													target="#{serversBean.serverSeleccionadoDto}" />
+													target="#{serversBean.serverSeleccionado}" />
 											</p:commandButton>
 
 											<!-- Delete -->
@@ -191,7 +191,7 @@
 												icon="ui-icon-trash" title="#{msg.Delete}"
 												action="#{serversBean.btnEliminarServidor()}">
 												<f:setPropertyActionListener value="#{serverVar}"
-													target="#{serversBean.serverSeleccionadoDto}" />
+													target="#{serversBean.serverSeleccionado}" />
 												<p:confirm header="#{msg.DeleteConfirmationHeader}"
 													message="#{msg.DeleteConfirmationMsg}" icon="ui-icon-alert" />
 											</p:commandButton>
@@ -209,24 +209,24 @@
 						hideEffect="fade" resizable="false">
 						<p:outputPanel id="servDetalle" style="text-align:center;">
 							<p:panelGrid columns="2"
-								rendered="#{not empty serversBean.serverSeleccionadoDto}"
+								rendered="#{not empty serversBean.serverSeleccionado}"
 								columnClasses="label,value">
 
 								<h:outputText value="Id:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.path}" />
+									value="#{serversBean.serverSeleccionado.path}" />
 
 								<h:outputText value="Hostname:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.hostname}" />
+									value="#{serversBean.serverSeleccionado.hostname}" />
 
 								<h:outputText value="#{msg.Status}:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.status}" />
+									value="#{serversBean.serverSeleccionado.status}" />
 
 								<h:outputText value="#{msg.AgentVersion}:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.versionAgent}" />
+									value="#{serversBean.serverSeleccionado.versionAgent}" />
 							</p:panelGrid>
 						</p:outputPanel>
 					</p:dialog>
