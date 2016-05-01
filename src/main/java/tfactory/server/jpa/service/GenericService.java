@@ -47,7 +47,7 @@ public class GenericService<T> {
      * Enums different operations to be executed by this class
      */
     private enum OPERATION {
-        PERSIST, UPDATE, REMOVE
+        PERSIST, UPDATE, REMOVE, REFRESH
     }
 
     /**
@@ -99,6 +99,15 @@ public class GenericService<T> {
     }
 
     /**
+     * Refreshes an entity from the database.
+     *
+     * @param entity Entity to be refreshed.
+     */
+    public void refreshEntity(T entity) throws TFactoryJPAException {
+        doDML(entity, OPERATION.REFRESH);
+    }
+
+    /**
      * Executes DML methods on the passed entity.
      *
      * @param entity Entity to work with.
@@ -122,6 +131,9 @@ public class GenericService<T> {
                     break;
                 case REMOVE:
                     em.remove(em.getReference(type, getEntityPK(entity)));
+                    break;
+                case REFRESH:
+                    em.refresh(em.getReference(type, getEntityPK(entity)));
                     break;
                 default:
                     break;
