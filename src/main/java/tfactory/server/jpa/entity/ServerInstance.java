@@ -19,6 +19,7 @@ import cesarhernandezgt.dto.InstanceDto;
 import tfactory.server.jpa.entity.pk.ServerInstancePK;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
@@ -211,7 +212,7 @@ public class ServerInstance implements Serializable {
      *
      * @param dto Where the information comes from.
      */
-    public void sync(InstanceDto dto) {
+    public void sync(@NotNull InstanceDto dto) {
         this.setStatus(dto.getStatus());
         this.setName(dto.getName());
         this.setAjp(dto.getServerXml().getAjp());
@@ -228,16 +229,18 @@ public class ServerInstance implements Serializable {
      * @param dto Where the information comes from.
      * @return New instance of the entity class based on the param's data.
      */
-    public static ServerInstance from(InstanceDto dto) {
+    public static ServerInstance from(@NotNull InstanceDto dto) {
         ServerInstance instance = new ServerInstance();
         instance.setPathLocation(dto.getPathLocation());
         instance.setStatus(dto.getStatus());
         instance.setName(dto.getName());
-        instance.setAjp(dto.getServerXml().getAjp());
-        instance.setAjpRedirect(dto.getServerXml().getAjpRedirect());
-        instance.setHttp(dto.getServerXml().getHttp());
-        instance.setHttpRedirect(dto.getServerXml().getHttpRedirect());
-        instance.setShutDown(dto.getServerXml().getShutDown());
+        if(dto.getServerXml() != null) {
+            instance.setAjp(dto.getServerXml().getAjp());
+            instance.setAjpRedirect(dto.getServerXml().getAjpRedirect());
+            instance.setHttp(dto.getServerXml().getHttp());
+            instance.setHttpRedirect(dto.getServerXml().getHttpRedirect());
+            instance.setShutDown(dto.getServerXml().getShutDown());
+        }
 
         return instance;
     }

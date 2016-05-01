@@ -18,6 +18,7 @@ package tfactory.server.jpa.entity;
 import cesarhernandezgt.dto.AgentDto;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.List;
 
@@ -110,7 +111,7 @@ public class ServerAgent implements Serializable {
      * @param dto Where the information comes from.
      * @return New instance of the entity class based on the param's data.
      */
-    public static ServerAgent from(AgentDto dto) {
+    public static ServerAgent from(@NotNull AgentDto dto) {
         ServerAgent server = new ServerAgent();
         server.setPath(dto.getPath());
         server.setHostname(dto.getHostname());
