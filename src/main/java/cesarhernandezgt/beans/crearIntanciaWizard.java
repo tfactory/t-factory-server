@@ -15,11 +15,17 @@
  */
 package cesarhernandezgt.beans;
 
-import java.io.File;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import cesarhernandezgt.clientRest.AgentRestClient;
+import cesarhernandezgt.dto.InstanceDto;
+import cesarhernandezgt.dto.Server;
+import cesarhernandezgt.dto.ServerXml;
+import org.primefaces.context.RequestContext;
+import org.primefaces.event.FlowEvent;
+import tfactory.server.jpa.entity.ServerAgent;
+import tfactory.server.jpa.entity.ServerInstance;
+import tfactory.server.jpa.entity.pk.ServerInstancePK;
+import tfactory.server.jpa.exception.TFactoryJPAException;
+import tfactory.server.jpa.service.GenericService;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.application.FacesMessage.Severity;
@@ -27,14 +33,13 @@ import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.ViewScoped;
 import javax.faces.context.FacesContext;
-
-import org.primefaces.context.RequestContext;
-import org.primefaces.event.FlowEvent;
-
-import cesarhernandezgt.clientRest.AgentRestClient;
-import cesarhernandezgt.dto.InstanceDto;
-import cesarhernandezgt.dto.Server;
-import cesarhernandezgt.dto.ServerXml;
+import java.io.File;
+import java.io.Serializable;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.ResourceBundle;
 
 
 @ManagedBean
@@ -211,36 +216,28 @@ public class crearIntanciaWizard implements Serializable{
 				
 				File archivo = obtenerPlantillaTomcatZip(plantillaInstanciaSeleccionada);
 				
-				//We check if the instance is registred in the system.
-				List<InstanceDto> instanciasDtoDelServidor = null;
-				Server servidorEnCuestion = null;
 				//Find serveDto and then his InstancesDto ArrayList
-				if (app.getListaServidores()!=null){
-					for (Server servidor : app.getListaServidores()) {
-						if(servidor.getId().equalsIgnoreCase(nameSelectedServer)){
-							instanciasDtoDelServidor = servidor.getListInstanceDto();
-							servidorEnCuestion = servidor;
-							break;
-						}
-					}
-
-					//check if the instance name already exist in this server
-					boolean instanciaExistente = false;
-					if(instanciasDtoDelServidor!=null){
-						for (InstanceDto InstanceDto : instanciasDtoDelServidor) {
-							if(InstanceDto.getPathLocation().equalsIgnoreCase(ubicStandardTomcatSeleccionada+"/"+nombreInstanciaCrear)){
-								instanciaExistente = true;
-								break;
-							}
-						}
-					}
-					
-					if (instanciaExistente){
-						context.addCallbackParam("operacionExitosa", false);
-						agregarMensaje( msgProperties.getString("InstanceAlreadyExistError")+": "+ubicStandardTomcatSeleccionada+"/"+nombreInstanciaCrear,FacesMessage.SEVERITY_ERROR);
-						return null;
-					}
+				GenericService<ServerAgent> serverService = GenericService.of(ServerAgent.class);
+				Optional<ServerAgent> optionalServer = serverService.findByPk(nameSelectedServer);
+				if(!optionalServer.isPresent())
+				{
+					context.addCallbackParam("operacionExitosa", false);
+					agregarMensaje(MessageFormat.format(msgProperties.getString("serverNotFound"),nameSelectedServer),FacesMessage.SEVERITY_ERROR);
+					return null;
 				}
+				ServerAgent servidorEnCuestion = optionalServer.get();
+
+				//We check if the instance is registred in the system.
+				GenericService<ServerInstance> instanceService = GenericService.of(ServerInstance.class);
+				ServerInstancePK instancePK = new ServerInstancePK(servidorEnCuestion.getPath(), ubicStandardTomcatSeleccionada+"/"+nombreInstanciaCrear);
+				Optional<ServerInstance> optionalInstance = instanceService.findByPk(instancePK);
+
+				if(optionalInstance.isPresent()){
+					context.addCallbackParam("operacionExitosa", false);
+					agregarMensaje( msgProperties.getString("InstanceAlreadyExistError")+": "+ubicStandardTomcatSeleccionada+"/"+nombreInstanciaCrear,FacesMessage.SEVERITY_ERROR);
+					return null;
+				}
+
 
 				//Start the interactions with the Agent at the remote server.
 				if (archivo != null) {
@@ -273,23 +270,29 @@ public class crearIntanciaWizard implements Serializable{
 							 cambiosAplicadosExitosos = agenteRestclientSvc.actualizaArchivoServerXmlRemoto(nameSelectedServer, ubicStandardTomcatSeleccionada, nombreInstanciaCrear, nuevoServerXml);
 							 if (cambiosAplicadosExitosos) {
 
-								 //if the Instances list is null we created.
-								 if(instanciasDtoDelServidor == null){
-									 instanciasDtoDelServidor = new ArrayList<InstanceDto>();
-									 servidorEnCuestion.setListInstanceDto(instanciasDtoDelServidor);
-								 }
-								 
-								 //register the new Instance in the Intance array list
-								 if(instanciasDtoDelServidor.add(nuevaInstanceDto)){
+								 ServerInstance newInstance = ServerInstance.from(nuevaInstanceDto);
+								 //set server agent path on the server instance, if not, JPA will fail.
+								 newInstance.setServerAgent(servidorEnCuestion.getPath());
+								 try
+								 {
+									 //register the new Instance in the Intance array list
+									 servidorEnCuestion.addInstance(newInstance);
+
+									 //update database
+									 GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
+									 service.updateEntity(servidorEnCuestion);
+
 									 System.out.println("Full success, new intance was created and registred." + nuevaInstanceDto.getPathLocation());
-								 }else{
+								 }
+								 catch(TFactoryJPAException ex)
+								 {
 									 context.addCallbackParam("operacionExitosa", true);
 									 agregarMensaje(msgProperties.getString("IntanceCreatedButNotRegistred")+nuevaInstanceDto.getPathLocation(),FacesMessage.SEVERITY_WARN);
 								 }
-							} else {
+							 } else {
 								context.addCallbackParam("operacionExitosa", cambiosAplicadosExitosos);
 								agregarMensaje(msgProperties.getString("ErrorUpdatingServerXmlFile")+nombreDelZipRemoto[1]+" en servidor remoto: "+nameSelectedServer,FacesMessage.SEVERITY_ERROR);
-							}
+							 }
 						 }else{
 							context.addCallbackParam("operacionExitosa", unZipExitos);
 							agregarMensaje(msgProperties.getString("InstanceCanNotBeUnzippedError")+nombreDelZipRemoto[1]+" server: "+nameSelectedServer,FacesMessage.SEVERITY_ERROR);
@@ -488,8 +491,8 @@ public class crearIntanciaWizard implements Serializable{
 	public void setMjgDialog(String mjgDialog) {
 		this.mjgDialog = mjgDialog;
 	}
-	
-	
-	
-	
+
+
+
+
 }
