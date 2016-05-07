@@ -186,7 +186,7 @@ public class GenericService<T> {
         Optional<T> result = null;
         try {
             em = factory.createEntityManager();
-            result = Optional.of(em.find(type, id));
+            result = Optional.ofNullable(em.find(type, id));
         } catch (Exception ex) {
             result = Optional.empty();
             LOGGER.log(Level.SEVERE, String.format("Error in find operation for entity %s", type), ex);
