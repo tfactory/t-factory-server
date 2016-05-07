@@ -27,6 +27,22 @@ public class ServerInstancePK implements Serializable {
     private String serverAgent;
     private String pathLocation;
 
+    /**
+     * Default constructor
+     */
+    public ServerInstancePK(){}
+
+    /**
+     * Creates an instance of this PK.
+     * @param serverAgent ID of the server agent.
+     * @param pathLocation Path location of the instance within the server agent.
+     */
+    public ServerInstancePK(String serverAgent, String pathLocation)
+    {
+        this.serverAgent = serverAgent;
+        this.pathLocation = pathLocation;
+    }
+
     public String getServerAgent() {
         return serverAgent;
     }
