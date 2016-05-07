@@ -17,7 +17,6 @@ package cesarhernandezgt.beans;
 
 import cesarhernandezgt.clientRest.AgentRestClient;
 import cesarhernandezgt.dto.InstanceDto;
-import cesarhernandezgt.dto.Server;
 import cesarhernandezgt.dto.ServerXml;
 import org.primefaces.context.RequestContext;
 import org.primefaces.event.FlowEvent;
@@ -134,69 +133,62 @@ public class crearIntanciaWizard implements Serializable{
 		System.out.println("\n    We enter to SubStep Configuration.");
 		System.out.println("      Obtaining available ports from server: "+nameSelectedServer);
 		
-		List<InstanceDto> instanciasDtoDelServidor = null;
-		
-		//obtenmos servidorDto en cuestion y luego su List de InstanciasDto
-		if (app.getListaServidores()!=null){			
-			for (Server servidor : app.getListaServidores()) {
-				if(servidor.getId().equalsIgnoreCase(nameSelectedServer)){
-					instanciasDtoDelServidor = servidor.getListInstanceDto();
-					break;
-				}
-			}
-			
-			List<Integer> puertosAexcluir = new ArrayList<Integer>();
-			if(instanciasDtoDelServidor != null && instanciasDtoDelServidor.size() > 0){
-			
-					//we obtain all the used port from the Instances already register from the remote server
-					 for (InstanceDto instancia : instanciasDtoDelServidor) {
-						 puertosAexcluir.add(instancia.getServerXml().getHttp());
-						 puertosAexcluir.add(instancia.getServerXml().getHttpRedirect());
-						 puertosAexcluir.add(instancia.getServerXml().getAjp());
-						 puertosAexcluir.add(instancia.getServerXml().getAjpRedirect());
-						 puertosAexcluir.add(instancia.getServerXml().getShutDown());
-						 //puertosAexcluir.add(instancia.getServerXml().getJmx());//not implemented yet
-					}
-			}else {
-				System.out
-						.println(" Info: The remote server dosen't have any previos register Instances, so we continue to look for his available ports");
-			}
-			
-			//call the WS Rest in order to obtain 5 available ports from the remote server. 
-			List<Integer> listaPuertosDisponibles = agenteRestclientSvc
-					.obtain5AvailablePorts(nameSelectedServer,
-							app.getPuertosRangoInical(),
-							app.getPuertosRangoFinal(), puertosAexcluir);
-
-			if (listaPuertosDisponibles != null) {
-				if (listaPuertosDisponibles.size() == 5) {
-					System.out.println("5 available ports were found successfully: "+listaPuertosDisponibles);
-
-					//Populate the Wizard UI values with the 5 port returned by the REST WS.
-					puertoHttp = listaPuertosDisponibles.get(0);
-					puertoAjp = listaPuertosDisponibles.get(1);
-					puertoShutdown = listaPuertosDisponibles.get(2);
-					puertoRedirect = listaPuertosDisponibles.get(3);
-					puertoJmx = listaPuertosDisponibles.get(4);
-					// 
-					return true;
-				} else {
-					// Warning listaPuertos contains less than 5 avilable ports.
-					System.out.println("The port list only has <"+ listaPuertosDisponibles.size() +"> available ports and should be 5.");
-					mjgDialog = msgProperties.getString("NoEnoughAvailablePortError")+" <"+ listaPuertosDisponibles.size() +">.";
-					return false;
-				}
-			} else {
-				// ERROR listaPuertos es null, hubo error al intentar
-				// consumir el servicio Rest.
-				System.out.println("Port List is NULL on server: "+nameSelectedServer);
-				mjgDialog = msgProperties.getString("CannotConnectWithRemoteServer");
-				return false;
-			}				
-		}else{
-			//ERROR
-			System.out.println("There is not Server List on memory");
+		//Find server
+		GenericService<ServerAgent> serverService = GenericService.of(ServerAgent.class);
+		Optional<ServerAgent> optionalServer = serverService.findByPk(nameSelectedServer);
+		if(!optionalServer.isPresent())
+		{
 			mjgDialog = msgProperties.getString("ErrorRetreivingServerList");
+			return false;
+		}
+		ServerAgent selectedServer = optionalServer.get();
+		List<ServerInstance> serverInstances = selectedServer.getInstances();
+			
+		List<Integer> puertosAexcluir = new ArrayList<Integer>();
+		if(serverInstances != null && serverInstances.size() > 0){
+			//we obtain all the used port from the Instances already register from the remote server
+			 for (ServerInstance instance : serverInstances) {
+				 puertosAexcluir.add(instance.getHttp());
+				 puertosAexcluir.add(instance.getHttpRedirect());
+				 puertosAexcluir.add(instance.getAjp());
+				 puertosAexcluir.add(instance.getAjpRedirect());
+				 puertosAexcluir.add(instance.getShutDown());
+				 //puertosAexcluir.add(instance.getServerXml().getJmx());//not implemented yet
+			}
+		}else {
+			System.out
+					.println(" Info: The remote server dosen't have any previos register Instances, so we continue to look for his available ports");
+		}
+			
+		//call the WS Rest in order to obtain 5 available ports from the remote server.
+		List<Integer> listaPuertosDisponibles = agenteRestclientSvc
+				.obtain5AvailablePorts(nameSelectedServer,
+						app.getPuertosRangoInical(),
+						app.getPuertosRangoFinal(), puertosAexcluir);
+
+		if (listaPuertosDisponibles != null) {
+			if (listaPuertosDisponibles.size() == 5) {
+				System.out.println("5 available ports were found successfully: "+listaPuertosDisponibles);
+
+				//Populate the Wizard UI values with the 5 port returned by the REST WS.
+				puertoHttp = listaPuertosDisponibles.get(0);
+				puertoAjp = listaPuertosDisponibles.get(1);
+				puertoShutdown = listaPuertosDisponibles.get(2);
+				puertoRedirect = listaPuertosDisponibles.get(3);
+				puertoJmx = listaPuertosDisponibles.get(4);
+				//
+				return true;
+			} else {
+				// Warning listaPuertos contains less than 5 avilable ports.
+				System.out.println("The port list only has <"+ listaPuertosDisponibles.size() +"> available ports and should be 5.");
+				mjgDialog = msgProperties.getString("NoEnoughAvailablePortError")+" <"+ listaPuertosDisponibles.size() +">.";
+				return false;
+			}
+		} else {
+			// ERROR listaPuertos es null, hubo error al intentar
+			// consumir el servicio Rest.
+			System.out.println("Port List is NULL on server: "+nameSelectedServer);
+			mjgDialog = msgProperties.getString("CannotConnectWithRemoteServer");
 			return false;
 		}
 	}
