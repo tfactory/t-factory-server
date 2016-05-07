@@ -106,6 +106,15 @@ public class ServerAgent implements Serializable {
     }
 
     /**
+     * Utility method to add an instance to the instances list.
+     * @param instance Instance to be added.
+     */
+    public void addInstance(@NotNull ServerInstance instance)
+    {
+        this.instances.add(instance);
+    }
+
+    /**
      * Creates a new instance of the entity based on the information of the AgentDto param.
      *
      * @param dto Where the information comes from.
