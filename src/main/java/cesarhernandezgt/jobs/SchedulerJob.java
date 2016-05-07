@@ -15,19 +15,17 @@
  */
 package cesarhernandezgt.jobs;
 
-import java.util.Date;
-import java.util.HashSet;
-
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.Job;
-import org.quartz.JobDataMap;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.PersistJobDataAfterExecution;
-
 import cesarhernandezgt.clientRest.AgentRestClient;
 import cesarhernandezgt.dto.AgentDto;
-import cesarhernandezgt.dto.Server;
+import org.quartz.*;
+import tfactory.server.jpa.entity.ServerAgent;
+import tfactory.server.jpa.exception.TFactoryJPAException;
+import tfactory.server.jpa.service.GenericService;
+
+import java.util.Date;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -42,15 +40,18 @@ import cesarhernandezgt.dto.Server;
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
 public class SchedulerJob implements Job{
-	
-	
+
+	private final static Logger LOGGER = Logger.getLogger(SchedulerJob.class.getName());
+
 	@Override
 	public void execute(JobExecutionContext context)
 		throws JobExecutionException {
  
 		JobDataMap data = context.getJobDetail().getJobDataMap();
-		@SuppressWarnings("unchecked")
-		HashSet<Server> listaServidores = (HashSet<Server>) data.get("LISTA_SERVIDORES");
+
+		//Gets the current list of servers from database
+		GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
+		List<ServerAgent> listaServidores =  service.findAll();
 
 		
 		Date timestampInicio = new Date();
@@ -75,30 +76,41 @@ public class SchedulerJob implements Job{
 	 * Sinchronice the entire list of Servers.
 	 * @param pListaServidores
 	 */
-	public void sincronizarListaServidores (HashSet<Server> pListaServidores){
+	public void sincronizarListaServidores (List<ServerAgent> pListaServidores){
 		AgentRestClient agenteRestclientSvc = new AgentRestClient();
 		int exitoso = 0;
 		int fallidos = 0;
 		
 		AgentDto objAgenteDtoAux = null;
-		for (Server servidor : pListaServidores) {
-			objAgenteDtoAux= agenteRestclientSvc.obtainAgenteSrv(servidor.getAgentDto().getPath());
+		for (ServerAgent servidor : pListaServidores) {
+			objAgenteDtoAux= agenteRestclientSvc.obtainAgenteSrv(servidor.getPath());
 			
 			if(objAgenteDtoAux.getStatus().equalsIgnoreCase("ok")){
 				exitoso ++;
 				//procedemos a actualizar datos del sevidor
-				servidor.getAgentDto().setStatus(objAgenteDtoAux.getStatus());
-				servidor.getAgentDto().setHostname(objAgenteDtoAux.getHostname());
-				servidor.getAgentDto().setVersionAgent(objAgenteDtoAux.getVersionAgent());
-				System.out.println("Succes sync with server:  "+ servidor.getAgentDto().getHostname());
+				servidor.setStatus(objAgenteDtoAux.getStatus());
+				servidor.setHostname(objAgenteDtoAux.getHostname());
+				servidor.setVersionAgent(objAgenteDtoAux.getVersionAgent());
+				System.out.println("Succes sync with server:  "+ servidor.getHostname());
 			}else {
 				fallidos++;
-				servidor.getAgentDto().setStatus("offline");
+				servidor.setStatus("offline");
 				System.out.println("Error trying sync with the server <" +objAgenteDtoAux.getStatus() + ">");
 			}
-			System.out.println(" Synchronizations successful: "+exitoso);
-			System.out.println(" Synchronizations faild: "+fallidos);
 
+			//update database
+			try
+			{
+				GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
+				service.updateEntity(servidor);
+
+				System.out.println(" Synchronizations successful: "+exitoso);
+				System.out.println(" Synchronizations faild: "+fallidos);
+			}
+			catch(TFactoryJPAException ex)
+			{
+				LOGGER.log(Level.SEVERE, "error updating server in database from job.", ex);
+			}
 		}
 		
 		
