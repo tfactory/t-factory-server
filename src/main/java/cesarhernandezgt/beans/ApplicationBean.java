@@ -15,29 +15,18 @@
  */
 package cesarhernandezgt.beans;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import cesarhernandezgt.jobs.SchedulerJob;
+import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.faces.bean.ApplicationScoped;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ManagedProperty;
 import javax.faces.model.SelectItem;
-
-import org.quartz.CronScheduleBuilder;
-import org.quartz.JobBuilder;
-import org.quartz.JobDetail;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
-import org.quartz.impl.StdSchedulerFactory;
-
-import cesarhernandezgt.dto.Server;
-import cesarhernandezgt.jobs.SchedulerJob;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 @ManagedBean(eager=true)
@@ -55,13 +44,6 @@ public class ApplicationBean {
 	
 	@ManagedProperty("#{globalConf.SynchInterval}")
 	private String synchInterval;
-	
-	
-	/**
-	 * Master list of registered Servers.
-	 * This is going to be replaced by a persistence store in future releases.
-	 */
-	private HashSet<Server>  listaServidores ;
 	
 	
 	/**
@@ -83,7 +65,6 @@ public class ApplicationBean {
 	@PostConstruct
     public void init() {
 		System.out.println("Loading global-configuration properties.");
-		listaServidores = new HashSet<Server> ();
 		autoRefreshOff = true;
 		listaUbicEstandarDeInstancias = new ArrayList<SelectItem>();
 		listaPlantillasInstancias = new ArrayList<SelectItem>();
@@ -125,8 +106,6 @@ public class ApplicationBean {
     	JobDetail jobA = JobBuilder.newJob(SchedulerJob.class)
 		.withIdentity(jobKeyA).build();
 		Trigger trigger1 = TriggerBuilder.newTrigger().withIdentity("dummyTriggerName1", "group1").withSchedule(CronScheduleBuilder.cronSchedule(synchInterval)).build();
-		// we send as reference the Master List of Remote Servers objects
-    	jobA.getJobDataMap().put("LISTA_SERVIDORES", listaServidores);
     	//System.out.println("se persistio en jobA la lisata de Servidores ...");
     	
     	try {
@@ -184,14 +163,6 @@ public class ApplicationBean {
 
 	public void setIntancesHomeDirectories(String intancesHomeDirectories) {
 		this.intancesHomeDirectories = intancesHomeDirectories;
-	}
-
-	public HashSet<Server> getListaServidores() {
-		return listaServidores;
-	}
-
-	public void setListaServidores(HashSet<Server> listaServidores) {
-		this.listaServidores = listaServidores;
 	}
 
 	public boolean isAutoRefreshOff() {

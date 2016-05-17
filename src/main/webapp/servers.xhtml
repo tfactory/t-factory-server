@@ -143,26 +143,26 @@
 						<tbody>
 							<tr>
 								<td><p:dataTable var="serverVar"
-										value="#{applicationBean.listaServidores}"
+										value="#{serversBean.serversList}"
 										tableStyle="width:auto">
 
 
 
 										<p:column headerText="#{msg.Name}" style="text-align: left;" >
 											<!-- <h:graphicImage value="images/serversito.png" /> -->
-											<h:outputText value="#{serverVar.agentDto.hostname}"  />
+											<h:outputText value="#{serverVar.hostname}"  />
 										</p:column>
 
 										<p:column headerText="#{msg.Status}">
-											<!-- <h:outputText value="#{serverVar.agentDto.status}" /> -->
+											
 											<h:graphicImage value="images/green_circle.png"
-												rendered="#{serverVar.agentDto.status == 'ok'}" />
+												rendered="#{serverVar.status == 'ok'}" />
 											<h:graphicImage value="images/red_circle.png"
-												rendered="#{serverVar.agentDto.status != 'ok'}" />
+												rendered="#{serverVar.status != 'ok'}" />
 										</p:column>
 
 										<p:column headerText="#{msg.AgentVersion}">
-											<h:outputText value="#{serverVar.agentDto.versionAgent}" />
+											<h:outputText value="#{serverVar.versionAgent}" />
 										</p:column>
 
 
@@ -175,7 +175,7 @@
 												oncomplete="PF('servidorDialog').show()"
 												icon="ui-icon-contact" title="#{msg.Details}">
 												<f:setPropertyActionListener value="#{serverVar}"
-													target="#{serversBean.serverSeleccionadoDto}" />
+													target="#{serversBean.serverSeleccionado}" />
 											</p:commandButton>
 
 											<!-- Synchonize -->
@@ -183,7 +183,7 @@
 												icon="ui-icon-refresh" title="#{msg.Synch}"
 												action="#{serversBean.btnSincronizarServidor()}">
 												<f:setPropertyActionListener value="#{serverVar}"
-													target="#{serversBean.serverSeleccionadoDto}" />
+													target="#{serversBean.serverSeleccionado}" />
 											</p:commandButton>
 
 											<!-- Delete -->
@@ -191,7 +191,7 @@
 												icon="ui-icon-trash" title="#{msg.Delete}"
 												action="#{serversBean.btnEliminarServidor()}">
 												<f:setPropertyActionListener value="#{serverVar}"
-													target="#{serversBean.serverSeleccionadoDto}" />
+													target="#{serversBean.serverSeleccionado}" />
 												<p:confirm header="#{msg.DeleteConfirmationHeader}"
 													message="#{msg.DeleteConfirmationMsg}" icon="ui-icon-alert" />
 											</p:commandButton>
@@ -209,24 +209,24 @@
 						hideEffect="fade" resizable="false">
 						<p:outputPanel id="servDetalle" style="text-align:center;">
 							<p:panelGrid columns="2"
-								rendered="#{not empty serversBean.serverSeleccionadoDto}"
+								rendered="#{not empty serversBean.serverSeleccionado}"
 								columnClasses="label,value">
 
 								<h:outputText value="Id:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.agentDto.path}" />
+									value="#{serversBean.serverSeleccionado.path}" />
 
 								<h:outputText value="Hostname:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.agentDto.hostname}" />
+									value="#{serversBean.serverSeleccionado.hostname}" />
 
 								<h:outputText value="#{msg.Status}:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.agentDto.status}" />
+									value="#{serversBean.serverSeleccionado.status}" />
 
 								<h:outputText value="#{msg.AgentVersion}:" />
 								<h:outputText
-									value="#{serversBean.serverSeleccionadoDto.agentDto.versionAgent}" />
+									value="#{serversBean.serverSeleccionado.versionAgent}" />
 							</p:panelGrid>
 						</p:outputPanel>
 					</p:dialog>

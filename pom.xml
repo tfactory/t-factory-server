@@ -23,9 +23,16 @@
   <packaging>war</packaging>
   <version>0.0.1</version>
   <name>t-factory-server</name>
-  
-  
-  <repositories>
+
+	<properties>
+		<!-- sets UTF8 for source code -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<!-- Dependencies versions -->
+		<eclipselink.version>2.6.2</eclipselink.version>
+		<sqlite.jdbc.version>3.8.11.2</sqlite.jdbc.version>
+	</properties>
+
+	<repositories>
 		<repository>
 			<id>prime-repo</id>
 			<name>Prime Repo</name>
@@ -133,7 +140,19 @@
 			<artifactId>jta</artifactId>
 			<version>1.1</version>
 		</dependency>
-		
+
+	  <!-- JPA related dependencies -->
+	  <dependency>
+		  <groupId>org.eclipse.persistence</groupId>
+		  <artifactId>eclipselink</artifactId>
+		  <version>${eclipselink.version}</version>
+	  </dependency>
+	  <dependency>
+		  <groupId>org.xerial</groupId>
+		  <artifactId>sqlite-jdbc</artifactId>
+		  <version>${sqlite.jdbc.version}</version>
+	  </dependency>
+
   </dependencies>
 
 	<build>

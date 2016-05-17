@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence" version="2.1">
+
+    <persistence-unit name="tFactoryServerUnit" transaction-type="RESOURCE_LOCAL">
+        <description>Persistence Unit for tFactory server</description>
+        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+        <!-- Enables auto discovery of persistent classes, -->
+        <!-- otherwise they must be listed using <class>  -->
+        <exclude-unlisted-classes>false</exclude-unlisted-classes>
+        <!-- Connection configuration -->
+        <properties>
+            <property name="javax.persistence.jdbc.driver" value="org.sqlite.JDBC"/>
+            <!-- property javax.persistence.jdbc.url is set dynamically in code so it points to a relative path />-->
+            <property name="eclipselink.ddl-generation.output-mode" value="database"/>
+            <property name="eclipselink.ddl-generation" value="create-or-extend-tables"/>
+        </properties>
+    </persistence-unit>
+</persistence>

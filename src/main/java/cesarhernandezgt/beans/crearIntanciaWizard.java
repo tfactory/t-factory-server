@@ -15,11 +15,16 @@
  */
 package cesarhernandezgt.beans;
 
-import java.io.File;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import cesarhernandezgt.clientRest.AgentRestClient;
+import cesarhernandezgt.dto.InstanceDto;
+import cesarhernandezgt.dto.ServerXml;
+import org.primefaces.context.RequestContext;
+import org.primefaces.event.FlowEvent;
+import tfactory.server.jpa.entity.ServerAgent;
+import tfactory.server.jpa.entity.ServerInstance;
+import tfactory.server.jpa.entity.pk.ServerInstancePK;
+import tfactory.server.jpa.exception.TFactoryJPAException;
+import tfactory.server.jpa.service.GenericService;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.application.FacesMessage.Severity;
@@ -27,14 +32,13 @@ import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.ViewScoped;
 import javax.faces.context.FacesContext;
-
-import org.primefaces.context.RequestContext;
-import org.primefaces.event.FlowEvent;
-
-import cesarhernandezgt.clientRest.AgentRestClient;
-import cesarhernandezgt.dto.InstanceDto;
-import cesarhernandezgt.dto.Server;
-import cesarhernandezgt.dto.ServerXml;
+import java.io.File;
+import java.io.Serializable;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.ResourceBundle;
 
 
 @ManagedBean
@@ -129,69 +133,62 @@ public class crearIntanciaWizard implements Serializable{
 		System.out.println("\n    We enter to SubStep Configuration.");
 		System.out.println("      Obtaining available ports from server: "+nameSelectedServer);
 		
-		List<InstanceDto> instanciasDtoDelServidor = null;
-		
-		//obtenmos servidorDto en cuestion y luego su List de InstanciasDto
-		if (app.getListaServidores()!=null){			
-			for (Server servidor : app.getListaServidores()) {
-				if(servidor.getId().equalsIgnoreCase(nameSelectedServer)){
-					instanciasDtoDelServidor = servidor.getListInstanceDto();
-					break;
-				}
-			}
-			
-			List<Integer> puertosAexcluir = new ArrayList<Integer>();
-			if(instanciasDtoDelServidor != null && instanciasDtoDelServidor.size() > 0){
-			
-					//we obtain all the used port from the Instances already register from the remote server
-					 for (InstanceDto instancia : instanciasDtoDelServidor) {
-						 puertosAexcluir.add(instancia.getServerXml().getHttp());
-						 puertosAexcluir.add(instancia.getServerXml().getHttpRedirect());
-						 puertosAexcluir.add(instancia.getServerXml().getAjp());
-						 puertosAexcluir.add(instancia.getServerXml().getAjpRedirect());
-						 puertosAexcluir.add(instancia.getServerXml().getShutDown());
-						 //puertosAexcluir.add(instancia.getServerXml().getJmx());//not implemented yet
-					}
-			}else {
-				System.out
-						.println(" Info: The remote server dosen't have any previos register Instances, so we continue to look for his available ports");
-			}
-			
-			//call the WS Rest in order to obtain 5 available ports from the remote server. 
-			List<Integer> listaPuertosDisponibles = agenteRestclientSvc
-					.obtain5AvailablePorts(nameSelectedServer,
-							app.getPuertosRangoInical(),
-							app.getPuertosRangoFinal(), puertosAexcluir);
-
-			if (listaPuertosDisponibles != null) {
-				if (listaPuertosDisponibles.size() == 5) {
-					System.out.println("5 available ports were found successfully: "+listaPuertosDisponibles);
-
-					//Populate the Wizard UI values with the 5 port returned by the REST WS.
-					puertoHttp = listaPuertosDisponibles.get(0);
-					puertoAjp = listaPuertosDisponibles.get(1);
-					puertoShutdown = listaPuertosDisponibles.get(2);
-					puertoRedirect = listaPuertosDisponibles.get(3);
-					puertoJmx = listaPuertosDisponibles.get(4);
-					// 
-					return true;
-				} else {
-					// Warning listaPuertos contains less than 5 avilable ports.
-					System.out.println("The port list only has <"+ listaPuertosDisponibles.size() +"> available ports and should be 5.");
-					mjgDialog = msgProperties.getString("NoEnoughAvailablePortError")+" <"+ listaPuertosDisponibles.size() +">.";
-					return false;
-				}
-			} else {
-				// ERROR listaPuertos es null, hubo error al intentar
-				// consumir el servicio Rest.
-				System.out.println("Port List is NULL on server: "+nameSelectedServer);
-				mjgDialog = msgProperties.getString("CannotConnectWithRemoteServer");
-				return false;
-			}				
-		}else{
-			//ERROR
-			System.out.println("There is not Server List on memory");
+		//Find server
+		GenericService<ServerAgent> serverService = GenericService.of(ServerAgent.class);
+		Optional<ServerAgent> optionalServer = serverService.findByPk(nameSelectedServer);
+		if(!optionalServer.isPresent())
+		{
 			mjgDialog = msgProperties.getString("ErrorRetreivingServerList");
+			return false;
+		}
+		ServerAgent selectedServer = optionalServer.get();
+		List<ServerInstance> serverInstances = selectedServer.getInstances();
+			
+		List<Integer> puertosAexcluir = new ArrayList<Integer>();
+		if(serverInstances != null && serverInstances.size() > 0){
+			//we obtain all the used port from the Instances already register from the remote server
+			 for (ServerInstance instance : serverInstances) {
+				 puertosAexcluir.add(instance.getHttp());
+				 puertosAexcluir.add(instance.getHttpRedirect());
+				 puertosAexcluir.add(instance.getAjp());
+				 puertosAexcluir.add(instance.getAjpRedirect());
+				 puertosAexcluir.add(instance.getShutDown());
+				 //puertosAexcluir.add(instance.getServerXml().getJmx());//not implemented yet
+			}
+		}else {
+			System.out
+					.println(" Info: The remote server dosen't have any previos register Instances, so we continue to look for his available ports");
+		}
+			
+		//call the WS Rest in order to obtain 5 available ports from the remote server.
+		List<Integer> listaPuertosDisponibles = agenteRestclientSvc
+				.obtain5AvailablePorts(nameSelectedServer,
+						app.getPuertosRangoInical(),
+						app.getPuertosRangoFinal(), puertosAexcluir);
+
+		if (listaPuertosDisponibles != null) {
+			if (listaPuertosDisponibles.size() == 5) {
+				System.out.println("5 available ports were found successfully: "+listaPuertosDisponibles);
+
+				//Populate the Wizard UI values with the 5 port returned by the REST WS.
+				puertoHttp = listaPuertosDisponibles.get(0);
+				puertoAjp = listaPuertosDisponibles.get(1);
+				puertoShutdown = listaPuertosDisponibles.get(2);
+				puertoRedirect = listaPuertosDisponibles.get(3);
+				puertoJmx = listaPuertosDisponibles.get(4);
+				//
+				return true;
+			} else {
+				// Warning listaPuertos contains less than 5 avilable ports.
+				System.out.println("The port list only has <"+ listaPuertosDisponibles.size() +"> available ports and should be 5.");
+				mjgDialog = msgProperties.getString("NoEnoughAvailablePortError")+" <"+ listaPuertosDisponibles.size() +">.";
+				return false;
+			}
+		} else {
+			// ERROR listaPuertos es null, hubo error al intentar
+			// consumir el servicio Rest.
+			System.out.println("Port List is NULL on server: "+nameSelectedServer);
+			mjgDialog = msgProperties.getString("CannotConnectWithRemoteServer");
 			return false;
 		}
 	}
@@ -211,36 +208,28 @@ public class crearIntanciaWizard implements Serializable{
 				
 				File archivo = obtenerPlantillaTomcatZip(plantillaInstanciaSeleccionada);
 				
-				//We check if the instance is registred in the system.
-				List<InstanceDto> instanciasDtoDelServidor = null;
-				Server servidorEnCuestion = null;
 				//Find serveDto and then his InstancesDto ArrayList
-				if (app.getListaServidores()!=null){
-					for (Server servidor : app.getListaServidores()) {
-						if(servidor.getId().equalsIgnoreCase(nameSelectedServer)){
-							instanciasDtoDelServidor = servidor.getListInstanceDto();
-							servidorEnCuestion = servidor;
-							break;
-						}
-					}
-
-					//check if the instance name already exist in this server
-					boolean instanciaExistente = false;
-					if(instanciasDtoDelServidor!=null){
-						for (InstanceDto InstanceDto : instanciasDtoDelServidor) {
-							if(InstanceDto.getPathLocation().equalsIgnoreCase(ubicStandardTomcatSeleccionada+"/"+nombreInstanciaCrear)){
-								instanciaExistente = true;
-								break;
-							}
-						}
-					}
-					
-					if (instanciaExistente){
-						context.addCallbackParam("operacionExitosa", false);
-						agregarMensaje( msgProperties.getString("InstanceAlreadyExistError")+": "+ubicStandardTomcatSeleccionada+"/"+nombreInstanciaCrear,FacesMessage.SEVERITY_ERROR);
-						return null;
-					}
+				GenericService<ServerAgent> serverService = GenericService.of(ServerAgent.class);
+				Optional<ServerAgent> optionalServer = serverService.findByPk(nameSelectedServer);
+				if(!optionalServer.isPresent())
+				{
+					context.addCallbackParam("operacionExitosa", false);
+					agregarMensaje(MessageFormat.format(msgProperties.getString("serverNotFound"),nameSelectedServer),FacesMessage.SEVERITY_ERROR);
+					return null;
 				}
+				ServerAgent servidorEnCuestion = optionalServer.get();
+
+				//We check if the instance is registred in the system.
+				GenericService<ServerInstance> instanceService = GenericService.of(ServerInstance.class);
+				ServerInstancePK instancePK = new ServerInstancePK(servidorEnCuestion.getPath(), ubicStandardTomcatSeleccionada+"/"+nombreInstanciaCrear);
+				Optional<ServerInstance> optionalInstance = instanceService.findByPk(instancePK);
+
+				if(optionalInstance.isPresent()){
+					context.addCallbackParam("operacionExitosa", false);
+					agregarMensaje( msgProperties.getString("InstanceAlreadyExistError")+": "+ubicStandardTomcatSeleccionada+"/"+nombreInstanciaCrear,FacesMessage.SEVERITY_ERROR);
+					return null;
+				}
+
 
 				//Start the interactions with the Agent at the remote server.
 				if (archivo != null) {
@@ -273,23 +262,29 @@ public class crearIntanciaWizard implements Serializable{
 							 cambiosAplicadosExitosos = agenteRestclientSvc.actualizaArchivoServerXmlRemoto(nameSelectedServer, ubicStandardTomcatSeleccionada, nombreInstanciaCrear, nuevoServerXml);
 							 if (cambiosAplicadosExitosos) {
 
-								 //if the Instances list is null we created.
-								 if(instanciasDtoDelServidor == null){
-									 instanciasDtoDelServidor = new ArrayList<InstanceDto>();
-									 servidorEnCuestion.setListInstanceDto(instanciasDtoDelServidor);
-								 }
-								 
-								 //register the new Instance in the Intance array list
-								 if(instanciasDtoDelServidor.add(nuevaInstanceDto)){
+								 ServerInstance newInstance = ServerInstance.from(nuevaInstanceDto);
+								 //set server agent path on the server instance, if not, JPA will fail.
+								 newInstance.setServerAgent(servidorEnCuestion.getPath());
+								 try
+								 {
+									 //register the new Instance in the Intance array list
+									 servidorEnCuestion.addInstance(newInstance);
+
+									 //update database
+									 GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
+									 service.updateEntity(servidorEnCuestion);
+
 									 System.out.println("Full success, new intance was created and registred." + nuevaInstanceDto.getPathLocation());
-								 }else{
+								 }
+								 catch(TFactoryJPAException ex)
+								 {
 									 context.addCallbackParam("operacionExitosa", true);
 									 agregarMensaje(msgProperties.getString("IntanceCreatedButNotRegistred")+nuevaInstanceDto.getPathLocation(),FacesMessage.SEVERITY_WARN);
 								 }
-							} else {
+							 } else {
 								context.addCallbackParam("operacionExitosa", cambiosAplicadosExitosos);
 								agregarMensaje(msgProperties.getString("ErrorUpdatingServerXmlFile")+nombreDelZipRemoto[1]+" en servidor remoto: "+nameSelectedServer,FacesMessage.SEVERITY_ERROR);
-							}
+							 }
 						 }else{
 							context.addCallbackParam("operacionExitosa", unZipExitos);
 							agregarMensaje(msgProperties.getString("InstanceCanNotBeUnzippedError")+nombreDelZipRemoto[1]+" server: "+nameSelectedServer,FacesMessage.SEVERITY_ERROR);
@@ -488,8 +483,8 @@ public class crearIntanciaWizard implements Serializable{
 	public void setMjgDialog(String mjgDialog) {
 		this.mjgDialog = mjgDialog;
 	}
-	
-	
-	
-	
+
+
+
+
 }

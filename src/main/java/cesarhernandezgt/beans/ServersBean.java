@@ -15,7 +15,13 @@
  */
 package cesarhernandezgt.beans;
 
-import java.util.ResourceBundle;
+import cesarhernandezgt.clientRest.AgentRestClient;
+import cesarhernandezgt.dto.AgentDto;
+import org.primefaces.context.RequestContext;
+import tfactory.server.jpa.entity.ServerAgent;
+import tfactory.server.jpa.exception.TFactoryExceptionCodeEnum;
+import tfactory.server.jpa.exception.TFactoryJPAException;
+import tfactory.server.jpa.service.GenericService;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.application.FacesMessage.Severity;
@@ -23,12 +29,8 @@ import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.RequestScoped;
 import javax.faces.context.FacesContext;
-
-import org.primefaces.context.RequestContext;
-
-import cesarhernandezgt.clientRest.AgentRestClient;
-import cesarhernandezgt.dto.AgentDto;
-import cesarhernandezgt.dto.Server;
+import java.util.List;
+import java.util.ResourceBundle;
 
 @ManagedBean
 @RequestScoped
@@ -51,14 +53,14 @@ public class ServersBean {
 	private ResourceBundle msgProperties;
 	
 	//Attribute used to store the details of a remote Server
-	private Server serverSeleccionadoDto;
+	private ServerAgent serverSeleccionado;
 	
-	public Server getServerSeleccionadoDto() {
-		return serverSeleccionadoDto;
+	public ServerAgent getServerSeleccionado() {
+		return serverSeleccionado;
 	}
 
-	public void setServerSeleccionadoDto(Server serverSeleccionadoDto) {
-		this.serverSeleccionadoDto = serverSeleccionadoDto;
+	public void setServerSeleccionado(ServerAgent serverSeleccionado) {
+		this.serverSeleccionado = serverSeleccionado;
 	}
 
 	//Injection AgenteRestClient Bean
@@ -125,24 +127,32 @@ public class ServersBean {
 				
 		if(objAgenteDto != null && objAgenteDto.getStatus().equalsIgnoreCase("ok")){
 			
-			//To the recieved object we add the entire path (this is the primary key of server list)
+			//To the received object we add the entire path (this is the primary key of server list)
 			objAgenteDto.setPath(target.toString());
-			
-			//Creation of Server node, then the obtained AgentDto instance of is added to the node.
-			Server servidorNuevo = new Server();
-			servidorNuevo.setAgentDto(objAgenteDto);
-			servidorNuevo.setId(target.toString());
-			
-			if(app.getListaServidores().add(servidorNuevo)){
+
+			try
+			{
+				//Creation of ServerAgent node.
+				ServerAgent serverAgent = ServerAgent.from(objAgenteDto);
+
+				GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
+				service.persistEntity(serverAgent);
+
 				System.out.println("Server Added Successfully <"+ target.toString() +">");
 				operacionExitosa = true;
 				agregarMensaje(msgProperties.getString("ServerAddedSucc")+ objAgenteDto.getHostname(), FacesMessage.SEVERITY_INFO);
-			}else{
-				System.out.println("The location for the server is already registred <"+ target.toString() +">");
+
+			}catch(TFactoryJPAException ex)
+			{
 				operacionExitosa = false;
-				agregarMensaje(msgProperties.getString("ServerAlreadyExist")+" <" +target.toString() +">", FacesMessage.SEVERITY_ERROR);
+				if(ex.getExceptionCode() == TFactoryExceptionCodeEnum.CONSTRAINT_VIOLATION) {
+					System.out.println("The location for the server is already registred <" + target.toString() + ">");
+					agregarMensaje(msgProperties.getString("ServerAlreadyExist") + " <" + target.toString() + ">", FacesMessage.SEVERITY_ERROR);
+				}
+				else {
+					agregarMensaje(msgProperties.getString("jpa-persist-error"), FacesMessage.SEVERITY_ERROR);
+				}
 			}
-			
 		}else {
 			operacionExitosa = false;
 			agregarMensaje(msgProperties.getString("ServerNotAddedError")+" <" +objAgenteDto.getStatus() + ">", FacesMessage.SEVERITY_ERROR);
@@ -175,20 +185,31 @@ public class ServersBean {
 	 * Method that makes a synchronization with the remote server that contains the agent.
 	 */
 	public void btnSincronizarServidor (){
-		System.out.println("Server to be synchoronized: "+serverSeleccionadoDto.getAgentDto().getPath());
+		System.out.println("Server to be synchoronized: "+ serverSeleccionado.getPath());
 		
 		//We consume the Agent Rest Web Servcice 
-		AgentDto objAgenteDtoAux = agenteRestclientSvc.obtainAgenteSrv(serverSeleccionadoDto.getAgentDto().getPath());
+		AgentDto objAgenteDtoAux = agenteRestclientSvc.obtainAgenteSrv(serverSeleccionado.getPath());
 		
 		if(objAgenteDtoAux.getStatus().equalsIgnoreCase("ok")){
 			//Server data is updated
-			serverSeleccionadoDto.getAgentDto().setStatus(objAgenteDtoAux.getStatus());
-			serverSeleccionadoDto.getAgentDto().setHostname(objAgenteDtoAux.getHostname());
-			serverSeleccionadoDto.getAgentDto().setVersionAgent(objAgenteDtoAux.getVersionAgent());
-			agregarMensaje(msgProperties.getString("SynchSuccessfull")+": "+ serverSeleccionadoDto.getAgentDto().getHostname(), FacesMessage.SEVERITY_INFO);
+			serverSeleccionado.setStatus(objAgenteDtoAux.getStatus());
+			serverSeleccionado.setHostname(objAgenteDtoAux.getHostname());
+			serverSeleccionado.setVersionAgent(objAgenteDtoAux.getVersionAgent());
+			agregarMensaje(msgProperties.getString("SynchSuccessfull")+": "+ serverSeleccionado.getHostname(), FacesMessage.SEVERITY_INFO);
 		}else {
-			serverSeleccionadoDto.getAgentDto().setStatus("offline");
+			serverSeleccionado.setStatus("offline");
 			agregarMensaje(msgProperties.getString("SynchError")+" <" +objAgenteDtoAux.getStatus() + ">", FacesMessage.SEVERITY_ERROR);
+		}
+
+		//update database
+		try
+		{
+			GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
+			service.updateEntity(serverSeleccionado);
+		}
+		catch(TFactoryJPAException ex)
+		{
+			agregarMensaje(String.format(msgProperties.getString("jpa-update-error"), ex.getExceptionCode()), FacesMessage.SEVERITY_ERROR);
 		}
 	}
 	
@@ -197,11 +218,18 @@ public class ServersBean {
 	 * Delete (deregistred) a server.
 	 */
 	public void btnEliminarServidor (){
-		System.out.println("Deleting server: "+serverSeleccionadoDto.getAgentDto().getPath());
-		if (app.getListaServidores().remove(serverSeleccionadoDto)){
+		System.out.println("Deleting server: "+ serverSeleccionado.getPath());
+
+		try
+		{
+			GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
+			service.removeEntity(serverSeleccionado);
+
 			agregarMensaje(msgProperties.getString("ServerDeletedSucc")+".", FacesMessage.SEVERITY_INFO);
-		}else {
-			agregarMensaje(msgProperties.getString("ServerDeletedError")+" <" +serverSeleccionadoDto.getAgentDto().getHostname() + ">", FacesMessage.SEVERITY_ERROR);
+		}
+		catch(TFactoryJPAException ex)
+		{
+			agregarMensaje(msgProperties.getString("ServerDeletedError")+" <" + serverSeleccionado.getHostname() + ">", FacesMessage.SEVERITY_ERROR);
 		}
 	}
 
@@ -251,5 +279,16 @@ public class ServersBean {
 
 	public void setMsgProperties(ResourceBundle msgProperties) {
 		this.msgProperties = msgProperties;
+	}
+
+	/**
+	 * Gets the list of registered servers.
+	 * @return List of {@link ServerAgent} from database.
+     */
+	public List<ServerAgent> getServersList()
+	{
+		GenericService<ServerAgent> service = GenericService.of(ServerAgent.class);
+
+		return service.findAll();
 	}
 }
