@@ -41,9 +41,11 @@ For agent configuration see: [t-factory-agent] (https://github.com/tfactory/t-fa
 
 ##Features
 
+
 * Add/Remove remote servers to manage.
 * Monitor remote t-factory-agent status.
 * Register/Deregister instances already created on remote servers.
+* Persistence layer with sqlite
 * Creation of new instances on remote servers with auto and manual selection of available ports.
 * Instance template catalog capability.
 * Monitor changes on configuration (currently server.xml file) of remote instances.
@@ -60,13 +62,13 @@ You can check: [open and closed issues.](https://github.com/tfactory/t-factory-s
 
 ## Roadmap
 This is the list of the upcoming features. (Looking forward to have your coding contribution):
-* Add Persistences layer (currently all is stored in memory)
 * Authentication and Authorization 
 * Log4j incorporation
 * Configure memory parameters to instances when they are created from the tFactory server.
 * Configure jmx port parameter to instances when they are created from the tFactory server.
 * Datasource managements.
 * GUI edition of global configurations.
+* Ability to create groups of servers or instance to trigger global start and stop operations.
 
 
 ## Copyright and license
