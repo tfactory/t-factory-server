@@ -1,4 +1,5 @@
 # t-factory-server
+[![Gitter](https://img.shields.io/gitter/room/tfactory/tfactory.svg?style=flat-square)](https://gitter.im/tfactory/Lobby)
 
 t-factory-server is a software aimed to manage Tomcat instances in a simple, standardized  and easy way via a Web Graphic User Interface that interact with agents (t-Factory-Agent) installed on remote servers.
 
